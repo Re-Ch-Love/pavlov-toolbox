@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>494</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Pavlov 工具箱 by Re-Ch</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QLabel" name="label">
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;欢迎使用 Pavlov 工具箱&lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;您可以点击左上角的 &lt;/span&gt;&lt;span style=&quot; font-size:14pt; font-weight:700;&quot;&gt;功能&lt;/span&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt; 菜单来选择需要的功能&lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;或是点击 &lt;/span&gt;&lt;span style=&quot; font-size:14pt; font-weight:700;&quot;&gt;帮助 - 前往使用指南网站&lt;/span&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt; 查看说明&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>33</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu_functions">
+    <property name="title">
+     <string>功能</string>
+    </property>
+    <addaction name="act_getModDlUrl"/>
+    <addaction name="act_unzipAndCompletion"/>
+    <addaction name="act_search"/>
+   </widget>
+   <widget class="QMenu" name="menu_help">
+    <property name="title">
+     <string>帮助</string>
+    </property>
+    <addaction name="act_notice"/>
+    <addaction name="act_checkUpdates"/>
+    <addaction name="separator"/>
+    <addaction name="act_usage"/>
+   </widget>
+   <addaction name="menu_functions"/>
+   <addaction name="menu_help"/>
+  </widget>
+  <action name="act_getModDlUrl">
+   <property name="text">
+    <string>获取Mod下载链接</string>
+   </property>
+  </action>
+  <action name="act_unzipAndCompletion">
+   <property name="text">
+    <string>解压并补全Mod压缩包</string>
+   </property>
+   <property name="toolTip">
+    <string>解压并补全Mod的Zip文件</string>
+   </property>
+  </action>
+  <action name="act_search">
+   <property name="text">
+    <string>搜索Mod相关信息</string>
+   </property>
+  </action>
+  <action name="action_4">
+   <property name="text">
+    <string/>
+   </property>
+  </action>
+  <action name="act_notice">
+   <property name="text">
+    <string>查看公告</string>
+   </property>
+  </action>
+  <action name="act_checkUpdates">
+   <property name="text">
+    <string>检查更新</string>
+   </property>
+  </action>
+  <action name="act_usage">
+   <property name="text">
+    <string>前往使用指南网站</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

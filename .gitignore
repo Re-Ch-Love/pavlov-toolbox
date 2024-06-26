@@ -1,0 +1,6 @@
+dist
+build
+output
+source
+venv
+**/__pycache__
