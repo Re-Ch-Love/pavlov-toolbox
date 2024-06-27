@@ -1,7 +1,7 @@
 from typing import Dict, List
 import requests
 import urllib.parse
-from PySide6.QtWidgets import QMainWindow, QApplication, QWidget, QTableWidgetItem, QHeaderView
+from PySide6.QtWidgets import QWidget, QTableWidgetItem, QHeaderView
 from PySide6.QtCore import QThread, Slot, Signal, Qt
 from ui.common import exec_simple_dialog
 from ui.search_ui import Ui_search
@@ -9,7 +9,6 @@ from features.common import *
 
 
 SEARCH_LIMIT = 10
-
 
 class SearchThread(QThread):
     onFinish = Signal(list)
@@ -59,6 +58,7 @@ class SearchWidget(QWidget):
         super().__init__()
         self.ui = Ui_search()
         self.ui.setupUi(self)
+        self.ui.pbtn_search.setShortcut(Qt.Key.Key_Return)
         self.ui.pbtn_search.clicked.connect(self.search)
         self.is_searching = False
         header = self.ui.table_result.horizontalHeader()

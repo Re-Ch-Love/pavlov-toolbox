@@ -149,3 +149,5 @@ if __name__ == "__main__":
     window.show()
     window.startCheckUpdatesThread()
     app.exec()
+
+# TODO: 内置aria2用于下载，这样不必再打开motrix

@@ -73,11 +73,18 @@ class Ui_getModDlUrl(object):
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.cbbox_modListName = QComboBox(getModDlUrl)
         self.cbbox_modListName.setObjectName(u"cbbox_modListName")
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.cbbox_modListName.sizePolicy().hasHeightForWidth())
+        self.cbbox_modListName.setSizePolicy(sizePolicy)
+        self.cbbox_modListName.setFrame(True)
 
         self.horizontalLayout_3.addWidget(self.cbbox_modListName)
 
         self.pbtn_replace = QPushButton(getModDlUrl)
         self.pbtn_replace.setObjectName(u"pbtn_replace")
+        self.pbtn_replace.setMaximumSize(QSize(16777215, 16777215))
         self.pbtn_replace.setFont(font1)
 
         self.horizontalLayout_3.addWidget(self.pbtn_replace)

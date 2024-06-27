@@ -87,10 +87,26 @@
      <item row="1" column="0">
       <layout class="QHBoxLayout" name="horizontalLayout_3">
        <item>
-        <widget class="QComboBox" name="cbbox_modListName"/>
+        <widget class="QComboBox" name="cbbox_modListName">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="frame">
+          <bool>true</bool>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QPushButton" name="pbtn_replace">
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>16777215</height>
+          </size>
+         </property>
          <property name="font">
           <font>
            <pointsize>10</pointsize>

@@ -52,6 +52,17 @@ class ConvertThread(QThread):
             self.onFinish.emit(download_url)
 
 
+class GetModListMapThread(QThread):
+    onFatal = Signal(str)
+    onFinish = Signal(dict)
+
+    def run(self):
+        try:
+            data = get_mod_list_map()
+        except AppInternalException as e:
+            self.onFatal.emit(str(e))
+        self.onFinish.emit(data)
+
 class GetDlUrlWidget(QWidget):
     def __init__(self):
         super().__init__()
@@ -63,10 +74,26 @@ class GetDlUrlWidget(QWidget):
         self.ui.pbtn_convert.clicked.connect(self.convert)
         self.ui.pbtn_replace.clicked.connect(self.replace)
         self.ui.pbtn_copy.clicked.connect(self.copy)
-        # FIXME 在init中请求，会导致打开缓慢，把这个放到另一个线程中去做
-        self.mod_list_map = get_mod_list_map()
-        self.ui.cbbox_modListName.addItems(list(self.mod_list_map.keys()))
+        self.mod_list_map: Dict[str, str] = {}
         self.is_converting = False
+        self.start_load_mod_list_thread()
+    
+    def start_load_mod_list_thread(self):
+        self.get_mod_list_map_thread = GetModListMapThread()
+        self.get_mod_list_map_thread.onFinish.connect(self.display_mod_list_map)
+        self.get_mod_list_map_thread.onFatal.connect(self.get_mod_list_map_error)
+        self.get_mod_list_map_thread.finished.connect(lambda: self.get_mod_list_map_thread.deleteLater)
+        self.get_mod_list_map_thread.start()
+
+    @Slot(str)
+    def get_mod_list_map_error(self, reason: str):
+        exec_simple_dialog("错误", f"无法获取mod列表一键填充相关数据，请检查网络连接。\n详细信息：{reason}")
+
+    @Slot(dict)
+    def display_mod_list_map(self, mod_list_map):
+        self.mod_list_map = mod_list_map
+        self.ui.cbbox_modListName.addItems(list(self.mod_list_map.keys()))
+        
 
     def copy(self):
         self.ui.ptedit_dlUrl.selectAll()
@@ -127,7 +154,6 @@ class GetDlUrlWidget(QWidget):
         self.convert_thread.onFatal.connect(onFatal)
         self.convert_thread.finished.connect(onThreadFinish)
         self.convert_thread.start()
-        # test RID: 2771448
 
     def replace(self):
         name = self.mod_list_map[self.ui.cbbox_modListName.currentText()]
