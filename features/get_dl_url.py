@@ -1,31 +1,8 @@
-from typing import List
 import requests
 from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import Slot, Signal, QThread
-from features.common import AppInternalException
-from ui.get_mod_dl_url_ui import Ui_getModDlUrl
-from ui.common import exec_simple_dialog
 from features.common import *
 
-# In this file, mod_id == rid (Resource ID)
-
-
-MOD_LIST_URL = "https://pavlov.rech.asia/mod-list?version=%s&name=%s"
-MOD_LIST_MAP_URL = "https://pavlov.rech.asia/mod-list-map"
-
-
-def get_mod_list_map():
-    res = requests.get(MOD_LIST_MAP_URL)
-    if res.status_code != 200:
-        raise AppInternalException("get_mod_list_from_remote: status_code != 200")
-    return res.json()
-
-
-def get_rid_list_from_remote(version: str, name: str) -> List[str]:
-    res = requests.get(MOD_LIST_URL % (version, name))
-    if res.status_code != 200:
-        raise AppInternalException("get_mod_list_from_remote: status_code != 200")
-    return res.json()["default"]
 
 
 class ConvertThread(QThread):
@@ -40,7 +17,7 @@ class ConvertThread(QThread):
     def run(self):
         for rid in self.rid_list:
             try:
-                mod = get_mod_json(rid)
+                mod = queryMod(rid)
                 taint = get_mod_platform_id(mod, "windows")
             except AppInternalException as e:
                 self.onError.emit(rid)

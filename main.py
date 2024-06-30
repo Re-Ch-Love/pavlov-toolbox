@@ -1,153 +1,130 @@
 import os
 import sys
-from PySide6.QtWidgets import QMainWindow, QApplication
-from PySide6.QtCore import QThread, Slot, Signal
+from PySide6.QtCore import QSize, QTimer
 from PySide6.QtGui import QIcon
-import requests
-from features.search import SearchWidget
-from features.unzip_and_complete import UnzipAndCompleteWidget
-from ui.common import exec_simple_dialog
-from ui.main_ui import Ui_MainWindow
-from features.get_dl_url import GetDlUrlWidget
+from PySide6.QtWidgets import QApplication
+from features.common import ChineseMessageBox
+from features.download_manager import DownloadManagerInterface
+from features.browser_interface import ThemeSyncedWebViewInterface
 import webbrowser
+from qfluentwidgets import (
+    FluentWindow,
+    FluentIcon,
+    InfoBar,
+    InfoBarPosition,
+    SplashScreen,
+    Theme,
+    setTheme,
+)
 
-VERSION = {"x": 0, "y": 2, "z": 0}
-
-
-def checkUpdates(silence: bool):
-    try:
-        res = requests.get("https://pavlov.rech.asia/latest-version")
-    except requests.exceptions.ConnectionError as e:
-        exec_simple_dialog("错误", f"无法连接到更新检查服务器。\n详细信息：{e}")
-        return
-    if res.status_code != 200:
-        exec_simple_dialog("错误", "更新检查服务器发生错误，请稍后再试。")
-        return
-    target_version = res.content.decode().strip('"')
-    x, y, z = target_version.split(".", 3)
-    if not (x.isdigit() and y.isdigit() and z.isdigit()):
-        exec_simple_dialog("错误", "更新检查服务器发生错误，请稍后再试。")
-        return
-    x, y, z = int(x), int(y), int(z)
-    # 只要每个数字都不大于1000，该算法就可以工作
-    target_version_sum = x * 1000_000 + y * 1000 + z
-    current_version_sum = VERSION["x"] * 1000_000 + VERSION["y"] * 1000 + VERSION["z"]
-    current_version = ".".join(
-        [str(n) for n in [VERSION["x"], VERSION["y"], VERSION["z"]]]
-    )
-    # print(target_version_sum, current_version_sum)
-    if target_version_sum > current_version_sum:
-        exec_simple_dialog(
-            "检查完毕",
-            f"当前版本：{current_version}\n最新版：{target_version}",
-            pbtnText="点击按钮下载最新版",
-            onPbtnClick=lambda: webbrowser.open(
-                "https://pavlovtoolbox.rech.asia/download"
-            ),
-        )
-    elif not silence:
-        exec_simple_dialog(
-            "检查完毕", f"您所使用的版本{current_version}已经是最新版了。"
-        )
+from features.search import SearchInterface
+from features.server_mod import ServerModInterface
+from update_manager import CheckUpdateThread
 
 
-class AppMainWindow(QMainWindow):
+# TODO: 将命名规则统一为驼峰
+class AppMainWindow(FluentWindow):
     def __init__(self):
         super().__init__()
-        self.ui = Ui_MainWindow()
-        self.ui.setupUi(self)
-        self.ui.act_getModDlUrl.triggered.connect(
-            lambda: self.setCentralWidget(GetDlUrlWidget())
+        self.setMicaEffectEnabled(False)
+        self.resize(900, 700)
+        icon = QIcon(resource_abs_path("icon.ico"))
+        app.setWindowIcon(icon)
+
+        self.initInterfaces()
+        self.startCheckUpdatesThread()
+
+        # 创建启动页（用来掩盖首页WebEngineView的加载时间，不然显得加载很慢）
+        self.splashScreen = SplashScreen(icon, self)
+        self.splashScreen.setIconSize(QSize(102, 102))
+        self.show()
+        # 2s后隐藏启动页
+        QTimer.singleShot(2000, self.splashScreen.finish)
+
+    def initInterfaces(self):
+        self.homeInterface = ThemeSyncedWebViewInterface(
+            "home", "https://pavlov-toolbox.rech.asia/app-home", self
         )
-        self.ui.act_unzipAndCompletion.triggered.connect(
-            lambda: self.setCentralWidget(UnzipAndCompleteWidget())
+        self.searchInterface = SearchInterface()
+        self.serverModInterface = ServerModInterface()
+        self.downloadManagerInterface = DownloadManagerInterface()
+        self.helpInterface = ThemeSyncedWebViewInterface(
+            "help", "https://pavlov-toolbox.rech.asia/usage", self
         )
-        self.ui.act_search.triggered.connect(
-            lambda: self.setCentralWidget(SearchWidget())
+
+        self.addSubInterface(self.homeInterface, FluentIcon.HOME, "首页")
+        self.navigationInterface.addSeparator()
+        self.addSubInterface(self.searchInterface, FluentIcon.SEARCH, "搜索并安装Mod")
+        self.addSubInterface(
+            self.serverModInterface, FluentIcon.DICTIONARY_ADD, "安装服务器指定Mod"
         )
-        self.ui.act_usage.triggered.connect(
-            lambda: webbrowser.open("https://pavlovtoolbox.rech.asia/usage")
+        self.addSubInterface(
+            self.downloadManagerInterface, FluentIcon.CLOUD_DOWNLOAD, "管理Mod安装任务"
         )
-        self.ui.act_notice.triggered.connect(
-            lambda: webbrowser.open("https://pavlovtoolbox.rech.asia/notice")
+        self.addSubInterface(
+            ThemeSyncedWebViewInterface(
+                "temp", "https://pavlov-toolbox.rech.asia/app-home", self
+            ),
+            FluentIcon.APPLICATION,
+            "管理本地Mod",
+        )  # TODO: 把本地Mod更新也放在这里面。Mod更新时对比API返回的taint和本地的taint，一次可以查询多个mod，使用参数id-in=2996823,2804502
+        self.navigationInterface.addSeparator()
+        self.addSubInterface(
+            ThemeSyncedWebViewInterface(
+                "temp2", "https://pavlov-toolbox.rech.asia/app-home", self
+            ),
+            FluentIcon.BOOK_SHELF,
+            "游戏相关知识",
         )
-        self.ui.act_checkUpdates.triggered.connect(lambda: checkUpdates(False))
+        self.navigationInterface.addSeparator()
+        self.addSubInterface(self.helpInterface, FluentIcon.QUESTION, "帮助")
+        # TODO: 加一个设置页，配置如下：
+        # - 是否启用云母特效
+        # - 是否自动下载依赖
+        # - 是否自动安装
 
     def startCheckUpdatesThread(self):
-        @Slot(str)
-        def onHasNewVersion(target_version):
-            exec_simple_dialog(
-                "发现新版本",
-                f"发现新版本：{target_version}",
-                pbtnText="点击按钮下载最新版",
-                onPbtnClick=lambda: webbrowser.open(
-                    "https://pavlovtoolbox.rech.asia/download"
-                ),
+        def onHasNewVersion(latest_version):
+            msgBox = ChineseMessageBox(
+                "发现新版本", f"最新版本：{latest_version}", self
+            )
+            msgBox.yesSignal.connect(
+                lambda: webbrowser.open("https://pavlov-toolbox.rech.asia/download")
+            )
+            msgBox.yesButton.setText("前往下载")
+            msgBox.exec()
+
+        def onError(reason):
+            InfoBar.error(
+                title="检查更新失败",
+                content=reason,
+                position=InfoBarPosition.BOTTOM_RIGHT,
+                duration=5000,
+                parent=self,
             )
 
-        @Slot(str)
-        def onError(reason):
-            window.ui.statusbar.showMessage(f"检查更新失败：{reason}", 6000)
-
-        self.check_updates_thread = CheckUpdates()
+        self.check_updates_thread = CheckUpdateThread()
         self.check_updates_thread.onHasNewVersion.connect(onHasNewVersion)
         self.check_updates_thread.onError.connect(onError)
-        self.check_updates_thread.finished.connect(lambda: self.check_updates_thread.deleteLater())
+        self.check_updates_thread.finished.connect(
+            lambda: self.check_updates_thread.deleteLater()
+        )
         self.check_updates_thread.start()
 
 
-class CheckUpdates(QThread):
-    onError = Signal(str)
-    # 发送一个版本号
-    onHasNewVersion = Signal(str)
-
-    def __init__(self) -> None:
-        super().__init__()
-
-    def run(self):
-        try:
-            res = requests.get("https://pavlov.rech.asia/latest-version")
-        except requests.exceptions.ConnectionError as e:
-            self.onError.emit(f"无法连接到更新检查服务器。\n详细信息：{e}")
-            return
-        if res.status_code != 200:
-            self.onError.emit("更新检查服务器发生错误，请稍后再试。")
-            return
-        target_version = res.content.decode().strip('"')
-        x, y, z = target_version.split(".", 3)
-        if not (x.isdigit() and y.isdigit() and z.isdigit()):
-            self.onError.emit("更新检查服务器发生错误，请稍后再试。")
-            return
-        x, y, z = int(x), int(y), int(z)
-        # 只要每个数字都不大于1000，该算法就可以工作
-        target_version_sum = x * 1000_000 + y * 1000 + z
-        current_version_sum = (
-            VERSION["x"] * 1000_000 + VERSION["y"] * 1000 + VERSION["z"]
-        )
-        # current_version = ".".join(
-        #     [str(n) for n in [version["x"], version["y"], version["z"]]]
-        # )
-        # print(target_version_sum, current_version_sum)
-        if target_version_sum > current_version_sum:
-            self.onHasNewVersion.emit(target_version)
-
 def resource_abs_path(relative_path):
     """将相对路径转为exe运行时资源文件的绝对路径"""
-    if hasattr(sys, '_MEIPASS'):
+    if hasattr(sys, "_MEIPASS"):
         # 只有通过exe运行时才会进入这个分支，它返回的是exe运行时的临时目录路径
-        base_path = sys._MEIPASS		# type: ignore
+        base_path = sys._MEIPASS  # type: ignore
     else:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
 
 if __name__ == "__main__":
+    setTheme(Theme.LIGHT)
     app = QApplication()
-    icon = QIcon(resource_abs_path("icon.png"))
-    app.setWindowIcon(icon)
     window = AppMainWindow()
     window.show()
-    window.startCheckUpdatesThread()
     app.exec()
-
-# TODO: 内置aria2用于下载，这样不必再打开motrix

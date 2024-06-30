@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QTextEdit,
 )
-from PySide6.QtCore import QThread, Signal, Slot
+from PySide6.QtCore import QThread, Signal
 from ui.unzip_and_complete_ui import Ui_unzipAndComplete
 
 import requests
@@ -25,7 +25,7 @@ pattern = re.compile("^[a-zA-Z]+_?([0-9]+).*?\\.zip$")
 
 def get_taint_content(mod_id: str) -> str:
     res = requests.get(
-        f"https://pavlov.rech.asia/modio/v1/games/@pavlov/mods?_limit=1&_offset=0&_sort=-popular&id={mod_id}",
+        f"https://api.pavlov-toolbox.rech.asia/modio/v1/games/@pavlov/mods?_limit=1&id={mod_id}",
     )
     if res.status_code != 200:
         raise Exception(f"res.status_code != 200 (modId={mod_id})")
@@ -128,7 +128,7 @@ class UnzipAndCompleteWidget(QWidget):
         count = 0
         success_count = 0
 
-        @Slot(str)
+
         def onStart(file_path):
             nonlocal count
             count += 1
@@ -139,7 +139,6 @@ class UnzipAndCompleteWidget(QWidget):
             success_count += 1
             output_manager.setSuccess()
 
-        @Slot(str)
         def onError(reason):
             output_manager.setError(str(reason))
 

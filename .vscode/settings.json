@@ -1,3 +1,33 @@
 {
-    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.typeCheckingMode": "standard",
+    "python.analysis.packageIndexDepths": [
+        {
+            "name": "PySide6",
+            "depth": 2
+        },
+        {
+            "name": "qfluentwidgets",
+            "includeAllSymbols": true
+        }
+    ],
+    
+    "terminal.integrated.env.windows": {
+        "PYTHONPATH": "${workspaceFolder}"
+    },
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "venv": true,
+    },
+    "VSCodeCounter.exclude": [
+        "**/.gitignore",
+        "**/.vscode/**",
+        "**/node_modules/**",
+        "ui",
+        "aria2",
+    ]
 }

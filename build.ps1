@@ -1,1 +1,1 @@
-pyinstaller.exe -F -w -n PavlovToolbox -i "icon.png" --add-data "icon.png:." .\main.py
+pyinstaller.exe -F -w -n PavlovToolbox -i "icon.ico" --add-data "icon.ico:." .\main.py

@@ -1,105 +1,127 @@
-from typing import Dict, List
-import requests
+from enum import Enum
+import json
+from PySide6 import QtNetwork
+from PySide6.QtGui import QKeySequence
+from qfluentwidgets import InfoBar, InfoBarPosition, PrimaryPushButton, RadioButton
 import urllib.parse
-from PySide6.QtWidgets import QWidget, QTableWidgetItem, QHeaderView
-from PySide6.QtCore import QThread, Slot, Signal, Qt
-from ui.common import exec_simple_dialog
-from ui.search_ui import Ui_search
+from PySide6.QtWidgets import (
+    QApplication,
+    QButtonGroup,
+    QSizePolicy,
+    QWidget,
+)
+from PySide6.QtCore import QUrl
+from ui.search_interface_ui import Ui_SearchInterface
 from features.common import *
 
 
 SEARCH_LIMIT = 10
 
-class SearchThread(QThread):
-    onFinish = Signal(list)
-    onFatal = Signal(str)
-    onNotFound = Signal()
 
-    def __init__(self, input: str):
-        super().__init__()
-        self.input = input
+class SearchInterface(QWidget):
+    class SearchMode(Enum):
+        modName = 1
+        rid = 2
 
-    def run(self):
-        res = requests.get(
-            f"https://pavlov.rech.asia/modio/v1/games/@pavlov/mods?_limit={SEARCH_LIMIT}&_offset=0&_sort=-popular&_q={urllib.parse.quote(self.input)}",
-        )
-        if res.status_code != 200:
-            raise AppInternalException(f"res.status_code != 200 (_q={self.input})")
-        data: List[Dict] = res.json()["data"]
-        if len(data) == 0:
-            self.onNotFound.emit()
-            return
-        result_table = []
-        for mod in data:
-            name = mod["name"]
-            rid = str(mod["id"])
-            # print(name, rid)
-            no_dl_url_flag = False
-            try:
-                # mod = get_mod_json(rid)
-                taint = get_mod_platform_id(mod, "windows")
-            except AppInternalException as e:
-                # self.onFatal.emit(str(e))
-                no_dl_url_flag = True
-            except requests.exceptions.ConnectionError as e:
-                self.onFatal.emit(str(e))
-                return
-            if no_dl_url_flag:
-                dl_url = "无法获取"
-            else:
-                dl_url = join_mod_download_url(mod, taint)
-            # print(dl_url)
-            result_table.append({"name": name, "rid": rid, "dl_url": dl_url})
-        self.onFinish.emit(result_table)
-
-
-class SearchWidget(QWidget):
     def __init__(self):
         super().__init__()
-        self.ui = Ui_search()
+        self.ui = Ui_SearchInterface()
         self.ui.setupUi(self)
-        self.ui.pbtn_search.setShortcut(Qt.Key.Key_Return)
-        self.ui.pbtn_search.clicked.connect(self.search)
-        self.is_searching = False
-        header = self.ui.table_result.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        # 初始化搜索栏
+        self.ui.searchLineEdit.searchSignal.connect(self.search)
+        # 设置主键区回车为快捷键
+        self.ui.searchLineEdit.searchButton.setShortcut(QKeySequence("Return"))
+        # 初始化搜索方式的单选按钮
+        self.radioButtonGroup = QButtonGroup(self)
+        self.radioButtonGroup.addButton(self.ui.modNameButton)
+        self.radioButtonGroup.addButton(self.ui.ridButton)
+        self.ui.modNameButton.setChecked(True)
+        self.toggleSearchMode(self.ui.modNameButton)
+        self.radioButtonGroup.buttonToggled.connect(self.toggleSearchMode)
+        # 初始化搜索结果表格
+        header = self.ui.resultTableWidget.horizontalHeader()
+        # header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         header.setStretchLastSection(True)
+        # 初始化 naManager
+        self.naManager = QtNetwork.QNetworkAccessManager()
 
-    def search(self):
-        if self.is_searching:
+    def toggleSearchMode(self, button: RadioButton):
+        if button.objectName() == self.ui.modNameButton.objectName():
+            self.searchMode = SearchInterface.SearchMode.modName
+            self.ui.searchLineEdit.setPlaceholderText("请输入Mod名称")
+        elif button.objectName() == self.ui.ridButton.objectName():
+            self.searchMode = SearchInterface.SearchMode.rid
+            self.ui.searchLineEdit.setPlaceholderText("请输入Mod资源ID")
+
+    def search(self, input):
+        if input.strip() == "":
             return
-        self.is_searching = True
-        input = self.ui.lnedit_input.text()
+        if self.searchMode == SearchInterface.SearchMode.modName:
+            url = f"https://api.pavlov-toolbox.rech.asia/modio/v1/games/@pavlov/mods?_limit={SEARCH_LIMIT}&_sort=-popular&_q={urllib.parse.quote(input)}"
+        elif self.searchMode == SearchInterface.SearchMode.rid:
+            url = f"https://api.pavlov-toolbox.rech.asia/modio/v1/games/@pavlov/mods?_limit=1&id={urllib.parse.quote(input)}"
+        else:
+            InfoBar.error("软件内部发生错误", "")
+            return
+        request = QtNetwork.QNetworkRequest(QUrl(url))
+        self.searchReply = self.naManager.get(request)
+        self.searchReply.finished.connect(self.onSearchFinished)
+        self.searchReply.errorOccurred.connect(self.onSearchErrorOccured)
 
-        @Slot(str)
-        def onFatal(reason: str):
-            self.is_searching = False
-            self.search_thread.quit()
-            exec_simple_dialog("错误", f"无法获取搜索结果。\n详细信息：{reason}")
+    def onSearchErrorOccured(self, error):
+        InfoBar.error(
+            title="无法获取搜索结果",
+            content=error.name,
+            position=InfoBarPosition.BOTTOM_RIGHT,
+            duration=5000,
+            parent=self,
+        )
+        self.searchReply.deleteLater()
 
-        def onNotFound():
-            exec_simple_dialog("搜索完毕", "没有找到相关的Mod。")
+    def onSearchFinished(self):
+        if self.searchReply.error() != QtNetwork.QNetworkReply.NetworkError.NoError:
+            return
+        data = [
+            Mod(itemData)
+            for itemData in json.loads(
+                bytes(self.searchReply.readAll().data()).decode()
+            )["data"]
+        ]
+        if len(data) == 0:
+            InfoBar.info(
+                title="搜索完毕",
+                content="没有找到相关的Mod",
+                position=InfoBarPosition.BOTTOM_RIGHT,
+                duration=3000,
+                parent=self,
+            )
+            return
+        self.ui.resultTableWidget.setRowCount(len(data))
 
-        @Slot(list)
-        def onFinish(table: List[Dict[str, str]]):
-            # print(table)
-            self.ui.table_result.setRowCount(len(table))
-            def notEditableiItem(context: str):
-                item = QTableWidgetItem(context)
-                item.setFlags(item.flags() ^ Qt.ItemFlag.ItemIsEditable)
-                return item
-            for index, data in enumerate(table):
-                self.ui.table_result.setItem(index, 0, notEditableiItem(data["name"]))
-                self.ui.table_result.setItem(index, 1, notEditableiItem(data["rid"]))
-                self.ui.table_result.setItem(index, 2, notEditableiItem(data["dl_url"]))
+        for index, mod in enumerate(data):
+            # try:
+            #     downloadUrl = mod.getWindowsDownloadUrl()
+            # except TargetNotFound:
+            #     downloadUrl = "无法获取"
+            downloadButton = PrimaryPushButton()
+            downloadButton.setText("安装")
+            downloadButton.setFixedSize(80, 30)
+            downloadButton.setSizePolicy(
+                QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
+            )
+            self.ui.resultTableWidget.setCellWidget(index, 0, downloadButton)
+            self.ui.resultTableWidget.setItem(
+                index, 1, UneditableTableWidgetItem(str(mod.getResourceId()))
+            )
+            self.ui.resultTableWidget.setItem(
+                index, 2, UneditableTableWidgetItem(mod.getName())
+            )
 
-        def onThreadFinished():
-            self.is_searching = False
-            self.search_thread.deleteLater()
+        self.searchReply.deleteLater()
 
-        self.search_thread = SearchThread(input)
-        self.search_thread.onFatal.connect(onFatal)
-        self.search_thread.onFinish.connect(onFinish)
-        self.search_thread.onNotFound.connect(onNotFound)
-        self.search_thread.finished.connect(onThreadFinished)
-        self.search_thread.start()
+
+if __name__ == "__main__":
+    app = QApplication()
+    window = SearchInterface()
+    window.show()
+    app.exec()
