@@ -25,7 +25,7 @@ class Ui_DownloadCard(object):
     def setupUi(self, DownloadCard):
         if not DownloadCard.objectName():
             DownloadCard.setObjectName(u"DownloadCard")
-        DownloadCard.resize(416, 95)
+        DownloadCard.resize(416, 131)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -37,8 +37,10 @@ class Ui_DownloadCard(object):
         self.frame.setObjectName(u"frame")
         sizePolicy.setHeightForWidth(self.frame.sizePolicy().hasHeightForWidth())
         self.frame.setSizePolicy(sizePolicy)
+        self.frame.setMinimumSize(QSize(0, 100))
         self.verticalLayout = QVBoxLayout(self.frame)
         self.verticalLayout.setObjectName(u"verticalLayout")
+        self.verticalLayout.setContentsMargins(15, 15, 15, 5)
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.nameLabel = StrongBodyLabel(self.frame)

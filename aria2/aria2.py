@@ -2,6 +2,7 @@ import json
 import os
 import secrets
 import subprocess
+import sys
 import time
 from typing import Any, List, Optional
 import requests
@@ -36,7 +37,7 @@ class Aria2:
         executablePath = os.path.join("aria2", "aria2c.exe")
         configPath = os.path.join("aria2", "aria2.conf")
         self.rpcSecret = secrets.token_hex(32)
-        print(self.rpcSecret)
+        # print(self.rpcSecret)
         command = f"{executablePath} --conf-path {configPath} --rpc-secret {self.rpcSecret}".split()
         self.process = subprocess.Popen(
             command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
@@ -63,9 +64,9 @@ class Aria2:
             raise Aria2RpcException(obj["error"]["code"], obj["error"]["message"])
         return obj
 
-    def addUri(self, dlUrl: str) -> str:
+    def addUri(self, uris: List[str]) -> str:
         """添加下载任务，返回一个gid"""
-        gid = self._request("aria2.addUri", [dlUrl])["result"]
+        gid = self._request("aria2.addUri", uris)["result"]
         self.gidList.append(gid)
         return gid
 
@@ -136,16 +137,17 @@ class Aria2:
 if __name__ == "__main__":
     aria2 = Aria2()
     aria2.startRpcServer()
-    time.sleep(1)
+    # time.sleep(1)
     gid = aria2.addUri(
-        "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
+        ["https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"]
     )
     while True:
         # print(aria2.getVersion())
         result = aria2.tellStatus(
-            gid, ["downloadSpeed","completedLength","totalLength", "connections"]
+            gid, ["downloadSpeed", "completedLength", "totalLength", "connections"]
         )["result"]
-        speedNum, speedUnit = aria2.byteCountToHumanReadable(int(result["downloadSpeed"]))
+        speedNum, speedUnit = aria2.byteCountToHumanReadable(
+            int(result["downloadSpeed"])
+        )
         print(f"连接数：{result['connections']}，下载速度：{speedNum} {speedUnit}")
         time.sleep(1)
-    # aria2.process.wait()  # type: ignore

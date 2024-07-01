@@ -3,6 +3,7 @@ import sys
 from PySide6.QtCore import QSize, QTimer
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
+from aria2.aria2 import Aria2
 from features.common import ChineseMessageBox
 from features.download_manager import DownloadManagerInterface
 from features.browser_interface import ThemeSyncedWebViewInterface
@@ -30,16 +31,20 @@ class AppMainWindow(FluentWindow):
         self.resize(900, 700)
         icon = QIcon(resource_abs_path("icon.ico"))
         app.setWindowIcon(icon)
-
+        self.aria2 = Aria2()
+        
         self.initInterfaces()
         self.startCheckUpdatesThread()
 
         # 创建启动页（用来掩盖首页WebEngineView的加载时间，不然显得加载很慢）
         self.splashScreen = SplashScreen(icon, self)
         self.splashScreen.setIconSize(QSize(102, 102))
-        self.show()
+        self.show()       
         # 2s后隐藏启动页
         QTimer.singleShot(2000, self.splashScreen.finish)
+
+        
+        self.aria2.startRpcServer()
 
     def initInterfaces(self):
         self.homeInterface = ThemeSyncedWebViewInterface(
@@ -47,7 +52,7 @@ class AppMainWindow(FluentWindow):
         )
         self.searchInterface = SearchInterface()
         self.serverModInterface = ServerModInterface()
-        self.downloadManagerInterface = DownloadManagerInterface()
+        self.downloadManagerInterface = DownloadManagerInterface(self.aria2)
         self.helpInterface = ThemeSyncedWebViewInterface(
             "help", "https://pavlov-toolbox.rech.asia/usage", self
         )
