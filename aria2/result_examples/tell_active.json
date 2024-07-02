@@ -1,0 +1,94 @@
+{
+    "id": 4,
+    "jsonrpc": "2.0",
+    "result": [
+        {
+            "completedLength": "0",
+            "connections": "1",
+            "dir": "downloads",
+            "downloadSpeed": "0",
+            "files": [
+                {
+                    "completedLength": "0",
+                    "index": "1",
+                    "length": "0",
+                    "path": "",
+                    "selected": "true",
+                    "uris": [
+                        {
+                            "status": "used",
+                            "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
+                        },
+                        {
+                            "status": "waiting",
+                            "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
+                        },
+                        {
+                            "status": "waiting",
+                            "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
+                        },
+                        {
+                            "status": "waiting",
+                            "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
+                        },
+                        {
+                            "status": "waiting",
+                            "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
+                        },
+                        {
+                            "status": "waiting",
+                            "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
+                        },
+                        {
+                            "status": "waiting",
+                            "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
+                        },
+                        {
+                            "status": "waiting",
+                            "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
+                        },
+                        {
+                            "status": "waiting",
+                            "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
+                        },
+                        {
+                            "status": "waiting",
+                            "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
+                        },
+                        {
+                            "status": "waiting",
+                            "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
+                        },
+                        {
+                            "status": "waiting",
+                            "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
+                        },
+                        {
+                            "status": "waiting",
+                            "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
+                        },
+                        {
+                            "status": "waiting",
+                            "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
+                        },
+                        {
+                            "status": "waiting",
+                            "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
+                        },
+                        {
+                            "status": "waiting",
+                            "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
+                        }
+                    ]
+                }
+            ],
+            "gid": "fd65c222e7802bd2",
+            "numPieces": "0",
+            "pieceLength": "1048576",
+            "status": "active",
+            "totalLength": "0",
+            "uploadLength": "0",
+            "uploadSpeed": "0"
+        }
+    ]
+}

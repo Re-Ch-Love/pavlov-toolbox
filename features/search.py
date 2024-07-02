@@ -1,8 +1,16 @@
 from enum import Enum
+from functools import partial
 import json
+from re import S
 from PySide6 import QtNetwork
 from PySide6.QtGui import QKeySequence
-from qfluentwidgets import InfoBar, InfoBarPosition, PrimaryPushButton, RadioButton
+from qfluentwidgets import (
+    InfoBar,
+    InfoBarPosition,
+    PrimaryPushButton,
+    PushButton,
+    RadioButton,
+)
 import urllib.parse
 from PySide6.QtWidgets import (
     QApplication,
@@ -11,8 +19,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from PySide6.QtCore import QUrl
+from aria2.aria2 import Aria2
+from aria2.aria2_with_data import Aria2WithData
+from features.common import Mod, TargetNotFound, UneditableTableWidgetItem
+from features.download_card import CardName, DownloadCard
 from ui.search_interface_ui import Ui_SearchInterface
-from features.common import *
 
 
 SEARCH_LIMIT = 10
@@ -23,8 +34,9 @@ class SearchInterface(QWidget):
         modName = 1
         rid = 2
 
-    def __init__(self):
+    def __init__(self, aria2wd: Aria2WithData):
         super().__init__()
+        self.aria2wd = aria2wd
         self.ui = Ui_SearchInterface()
         self.ui.setupUi(self)
         # 初始化搜索栏
@@ -99,29 +111,44 @@ class SearchInterface(QWidget):
         self.ui.resultTableWidget.setRowCount(len(data))
 
         for index, mod in enumerate(data):
-            # try:
-            #     downloadUrl = mod.getWindowsDownloadUrl()
-            # except TargetNotFound:
-            #     downloadUrl = "无法获取"
-            downloadButton = PrimaryPushButton()
-            downloadButton.setText("安装")
-            downloadButton.setFixedSize(80, 30)
-            downloadButton.setSizePolicy(
-                QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
-            )
-            self.ui.resultTableWidget.setCellWidget(index, 0, downloadButton)
+            try:
+                downloadUrl = mod.getWindowsDownloadUrl()
+            except TargetNotFound:
+                downloadUrl = ""
+            modName = mod.getName()
+            if downloadUrl:
+                installButton = PrimaryPushButton()
+                installButton.setText("安装")
+                installButton.setFixedSize(80, 30)
+                installButton.setSizePolicy(
+                    QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
+                )
+                # 这里必须要用偏函数，不能用lambda闭包，否则下次循环时，downloadButton会被修改，则所有按钮的回调函数的参数都是同一个url
+                installButton.clicked.connect(
+                    partial(self.onInstall, installButton, downloadUrl, modName)
+                )
+                self.ui.resultTableWidget.setCellWidget(index, 0, installButton)
+            else:
+                self.ui.resultTableWidget.setItem(index, 0, UneditableTableWidgetItem("不可安装"))
+
             self.ui.resultTableWidget.setItem(
                 index, 1, UneditableTableWidgetItem(str(mod.getResourceId()))
             )
             self.ui.resultTableWidget.setItem(
-                index, 2, UneditableTableWidgetItem(mod.getName())
+                index, 2, UneditableTableWidgetItem(modName)
             )
 
         self.searchReply.deleteLater()
 
+    def onInstall(self, btnSelf: PushButton, url: str, displayName: str):
+        btnSelf.setText("安装中")
+        # TODO 需要创建一个Mod依赖管理器，添加下载链接时，发送给依赖管理器，依赖管理器检查依赖，然后再发送给下载管理器界面，这样可以显示displayName和hintName，例如依赖
+        hintName = ""  # 等依赖管理器做好之后，hintName用来显示“XXX的依赖”这段文字，如果没有保留空字符串即可
+        self.aria2wd.addUriWithData([url], CardName(displayName, hintName))
+
 
 if __name__ == "__main__":
     app = QApplication()
-    window = SearchInterface()
+    window = SearchInterface(Aria2WithData())
     window.show()
     app.exec()

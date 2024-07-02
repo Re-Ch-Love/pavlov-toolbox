@@ -4,7 +4,7 @@ import requests
 from config import VERSION, Version
 
 
-class CheckUpdateThread(QThread):
+class UpdatesCheckThread(QThread):
     # 发送reason
     onError = Signal(str)
     onHasNewVersion = Signal(Version)

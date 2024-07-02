@@ -4,6 +4,7 @@ from PySide6.QtCore import QSize, QTimer
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 from aria2.aria2 import Aria2
+from aria2.aria2_with_data import Aria2WithData
 from features.common import ChineseMessageBox
 from features.download_manager import DownloadManagerInterface
 from features.browser_interface import ThemeSyncedWebViewInterface
@@ -20,21 +21,24 @@ from qfluentwidgets import (
 
 from features.search import SearchInterface
 from features.server_mod import ServerModInterface
-from update_manager import CheckUpdateThread
+from update_manager import UpdatesCheckThread
 
 
 # TODO: 将命名规则统一为驼峰
 class AppMainWindow(FluentWindow):
-    def __init__(self):
+    def __init__(self, debug=False):
         super().__init__()
+        self.debug = debug
         self.setMicaEffectEnabled(False)
         self.resize(900, 700)
-        icon = QIcon(resource_abs_path("icon.ico"))
+        icon = QIcon(resourceAbsPath("icon.ico"))
         app.setWindowIcon(icon)
-        self.aria2 = Aria2()
+        self.aria2wd = Aria2WithData(debug=self.debug)
         
         self.initInterfaces()
         self.startCheckUpdatesThread()
+
+        self.stackedWidget.currentChanged.connect(self.onInterfaceChanged)
 
         # 创建启动页（用来掩盖首页WebEngineView的加载时间，不然显得加载很慢）
         self.splashScreen = SplashScreen(icon, self)
@@ -44,15 +48,15 @@ class AppMainWindow(FluentWindow):
         QTimer.singleShot(2000, self.splashScreen.finish)
 
         
-        self.aria2.startRpcServer()
+        self.aria2wd.startRpcServer()
 
     def initInterfaces(self):
         self.homeInterface = ThemeSyncedWebViewInterface(
             "home", "https://pavlov-toolbox.rech.asia/app-home", self
         )
-        self.searchInterface = SearchInterface()
+        self.searchInterface = SearchInterface(self.aria2wd)
         self.serverModInterface = ServerModInterface()
-        self.downloadManagerInterface = DownloadManagerInterface(self.aria2)
+        self.downloadManagerInterface = DownloadManagerInterface(self.aria2wd)
         self.helpInterface = ThemeSyncedWebViewInterface(
             "help", "https://pavlov-toolbox.rech.asia/usage", self
         )
@@ -87,6 +91,16 @@ class AppMainWindow(FluentWindow):
         # - 是否启用云母特效
         # - 是否自动下载依赖
         # - 是否自动安装
+    
+    def onInterfaceChanged(self):
+        """
+        当界面切换时触发
+        
+        当切换到下载界面时，通知其轮询下载进度等信息。
+        当不是下载界面时，停止这些操作以节约资源。
+        """
+        self.downloadManagerInterface.showStatusChanged.emit(self.stackedWidget.currentWidget() is self.downloadManagerInterface)
+        
 
     def startCheckUpdatesThread(self):
         def onHasNewVersion(latest_version):
@@ -108,28 +122,28 @@ class AppMainWindow(FluentWindow):
                 parent=self,
             )
 
-        self.check_updates_thread = CheckUpdateThread()
-        self.check_updates_thread.onHasNewVersion.connect(onHasNewVersion)
-        self.check_updates_thread.onError.connect(onError)
-        self.check_updates_thread.finished.connect(
-            lambda: self.check_updates_thread.deleteLater()
+        self.updateCheckThread = UpdatesCheckThread()
+        self.updateCheckThread.onHasNewVersion.connect(onHasNewVersion)
+        self.updateCheckThread.onError.connect(onError)
+        self.updateCheckThread.finished.connect(
+            lambda: self.updateCheckThread.deleteLater()
         )
-        self.check_updates_thread.start()
+        self.updateCheckThread.start()
 
 
-def resource_abs_path(relative_path):
+def resourceAbsPath(relativePath):
     """将相对路径转为exe运行时资源文件的绝对路径"""
     if hasattr(sys, "_MEIPASS"):
         # 只有通过exe运行时才会进入这个分支，它返回的是exe运行时的临时目录路径
         base_path = sys._MEIPASS  # type: ignore
     else:
         base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
+    return os.path.join(base_path, relativePath)
 
 
 if __name__ == "__main__":
     setTheme(Theme.LIGHT)
     app = QApplication()
-    window = AppMainWindow()
+    window = AppMainWindow(debug=True)
     window.show()
     app.exec()

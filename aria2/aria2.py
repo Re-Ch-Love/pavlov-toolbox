@@ -7,6 +7,8 @@ import time
 from typing import Any, List, Optional
 import requests
 
+from features.common import byteLengthToHumanReadable
+
 
 class Aria2RpcServerNotStartedException(Exception):
     pass
@@ -23,7 +25,16 @@ class Aria2RpcException(Exception):
 
 # 参考: https://aria2.document.top/zh/aria2c.html#id42
 class Aria2:
-    def __init__(self):
+    def __init__(self, debug=False):
+        """
+        参数`debug`：
+            控制子进程的输出重定向
+            ```
+            stdout=sys.stdout if self.debug else subprocess.DEVNULL,
+            stderr=sys.stderr if self.debug else subprocess.DEVNULL,
+            ```
+        """
+        self.debug = debug
         self.rpcUrl = "http://127.0.0.1:6800/jsonrpc"
         self.rpcHeaders = {"Content-Type": "application/json"}
         self.rpcId: int = 0
@@ -39,8 +50,11 @@ class Aria2:
         self.rpcSecret = secrets.token_hex(32)
         # print(self.rpcSecret)
         command = f"{executablePath} --conf-path {configPath} --rpc-secret {self.rpcSecret}".split()
+
         self.process = subprocess.Popen(
-            command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            command,
+            stdout=sys.stdout if self.debug else subprocess.DEVNULL,
+            stderr=sys.stderr if self.debug else subprocess.DEVNULL,
         )
 
     def _request(self, method: str, *params: Any):
@@ -93,9 +107,9 @@ class Aria2:
 
     def tellActive(self, keys: Optional[list] = None):
         if keys:
-            return self._request("aria2.tellActive", gid, keys)
+            return self._request("aria2.tellActive", keys)
         else:
-            return self._request("aria2.tellActive", gid)
+            return self._request("aria2.tellActive")
 
     def getGlobalStat(self):
         return self._request("aria2.getGlobalStat")
@@ -110,29 +124,6 @@ class Aria2:
     def shutdown(self):
         self._request("aria2.shutdown")
 
-    @staticmethod
-    def calculateProgresssPercentage(completedLength: int, totalLength: int) -> float:
-        """返回下载进度百分比，保留两位小数，取值范围[0, 1]，如果`totalLength`为0则返回0.0"""
-        if totalLength != 0:
-            percentage = round(completedLength / totalLength, 2)
-        else:
-            percentage = 0.0
-        return percentage
-
-    @staticmethod
-    def byteCountToHumanReadable(bytes: int):
-        """将字节数转化为人类可读的形式，返回一个元组`(数量，单位)`"""
-        if bytes >= 1024 * 1024:
-            number = round(bytes / 1024 / 1024, 2)
-            unit = "MB"
-        elif bytes >= 1024:
-            number = round(bytes / 1024, 2)
-            unit = "KB"
-        else:
-            number = bytes
-            unit = "B"
-        return number, unit
-
 
 if __name__ == "__main__":
     aria2 = Aria2()
@@ -143,11 +134,14 @@ if __name__ == "__main__":
     )
     while True:
         # print(aria2.getVersion())
-        result = aria2.tellStatus(
-            gid, ["downloadSpeed", "completedLength", "totalLength", "connections"]
-        )["result"]
-        speedNum, speedUnit = aria2.byteCountToHumanReadable(
-            int(result["downloadSpeed"])
-        )
-        print(f"连接数：{result['connections']}，下载速度：{speedNum} {speedUnit}")
+        # result = aria2.tellStatus(
+        #     gid,
+        #     # ["downloadSpeed", "completedLength", "totalLength", "connections"]
+        # )["result"]
+        # speedNum, speedUnit = byteCountToHumanReadable(
+        #     int(result["downloadSpeed"])
+        # )
+        # print(f"连接数：{result['connections']}，下载速度：{speedNum} {speedUnit}")
+        # print(result)
+        print(aria2.tellActive())
         time.sleep(1)

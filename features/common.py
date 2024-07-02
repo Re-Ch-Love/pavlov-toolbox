@@ -3,7 +3,7 @@ from PySide6 import QtNetwork
 from PySide6.QtCore import QUrl, Qt
 from PySide6.QtWidgets import QTableWidgetItem
 import requests
-from typing import Callable, Dict, List
+from typing import Any, Callable, Dict, Generic, List, Optional, TypeVar
 from qfluentwidgets import MessageBox
 
 class TargetNotFound(Exception):
@@ -35,7 +35,7 @@ class Mod:
         for platform in platform_list:
             if platform["platform"] == platformName:
                 return str(platform["modfile_live"])
-        raise TargetNotFound(f"目标平台", platformName=platformName)
+        raise TargetNotFound(f"目标平台", platformName=platformName, mod_raw_data=self.data)
 
     def getWindowsDownloadUrl(self) -> str:
         return f"https://g-3959.modapi.io/v1/games/3959/mods/{self.data['id']}/files/{self.getModFileLive("windows")}/download"
@@ -72,8 +72,40 @@ class ChineseMessageBox(MessageBox):
         self.yesButton.setText("确定")
         self.cancelButton.setText("取消")
 
-
+# 大写开头是因为该函数模拟了一个继承的行为，所以将它当作一个类来看待
 def UneditableTableWidgetItem(content: str):
     item = QTableWidgetItem(content)
     item.setFlags(item.flags() ^ Qt.ItemFlag.ItemIsEditable)
     return item
+
+def calculateProgresssPercentage(completedLength: int, totalLength: int, n: int) -> float:
+    """返回下载进度百分比，保留`n`位小数，取值范围[0, 1]，如果`totalLength`为0则返回0.0"""
+    if totalLength != 0:
+        percentage = round(completedLength / totalLength, n)
+    else:
+        percentage = 0.0
+    return percentage
+
+def byteLengthToHumanReadable(bytes: int):
+    """将字节长度转化为人类可读的形式，返回一个元组`(数量，单位)`"""
+    if bytes >= 1024 * 1024:
+        number = round(bytes / 1024 / 1024, 2)
+        unit = "MB"
+    elif bytes >= 1024:
+        number = round(bytes / 1024, 2)
+        unit = "KB"
+    else:
+        number = bytes
+        unit = "B"
+    return number, unit
+
+_T = TypeVar('_T')
+
+def defaultIfNone(obj: Optional[_T], default: _T) -> _T:
+    return default if obj is None else obj
+
+# def doIfdifferent(obj1: Any, obj2: Any, func: Callable[[], _T]) -> _T | None:
+#     return func() if obj1 != obj2 else None
+
+if __name__ == "__main__":
+    print(calculateProgresssPercentage(128, 1000, 3))
