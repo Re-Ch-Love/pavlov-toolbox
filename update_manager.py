@@ -1,7 +1,7 @@
 from PySide6.QtCore import QThread, Signal
 import requests
 
-from config import VERSION, Version
+from app_config import VERSION, Version
 
 
 class UpdatesCheckThread(QThread):

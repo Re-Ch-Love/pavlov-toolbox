@@ -10,7 +10,6 @@
             "includeAllSymbols": true
         }
     ],
-    
     "terminal.integrated.env.windows": {
         "PYTHONPATH": "${workspaceFolder}"
     },
@@ -22,12 +21,19 @@
         "**/.DS_Store": true,
         "**/Thumbs.db": true,
         "venv": true,
+        "**/__pycache__": true,
+        "build": true,
+        "dist": true,
     },
     "VSCodeCounter.exclude": [
         "**/.gitignore",
         "**/.vscode/**",
         "**/node_modules/**",
-        "ui",
-        "aria2",
-    ]
+    ],
+    "cSpell.words": [
+        "MEIPASS",
+        "modfile",
+        "pyside",
+        "qfluentwidgets"
+    ],
 }

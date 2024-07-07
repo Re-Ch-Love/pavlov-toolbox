@@ -5,8 +5,9 @@ from PySide6 import QtCore
 from PySide6.QtCore import QUrl
 from PySide6.QtWidgets import QApplication, QWidget
 from PySide6 import QtNetwork
-from features.common import MOD_BATCH_REQUEST_MAX_MODS_PER_REQUEST, Mod, UneditableTableWidgetItem, modBatchRequest
-from ui.server_interface_ui import Ui_ServerModInterface
+from features.common.mod import MOD_BATCH_REQUEST_MAX_MODS_PER_REQUEST, ModData, modBatchRequest
+from features.common.ui import UneditableQTableWidgetItem
+from generated_ui.server_interface_ui import Ui_ServerModInterface
 from qfluentwidgets import InfoBar, InfoBarPosition
 
 SERVERS_MOD_LIST_URL = "https://api.pavlov-toolbox.rech.asia/servers-mod-list"
@@ -28,14 +29,14 @@ class ServerModInterface(QWidget):
         ridList: List[int] = self.serversModList[serverIndex]["ridList"]
         self.ui.tableWidget.setRowCount(len(ridList))
         for index, rid in enumerate(ridList):
-            item = UneditableTableWidgetItem(str(rid))
+            item = UneditableQTableWidgetItem(str(rid))
             item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
             self.ui.tableWidget.setItem(index, 0, item)
         self.modBatchReplies: List[QtNetwork.QNetworkReply] = modBatchRequest(
             self.naManager,
             ridList,
             partial(self.onTableModNameFinished, serverIndex),
-            self.onTableModNameErrorOccured,
+            self.onTableModNameErrorOccurred,
         )
 
     def onTableModNameFinished(self, currentServerModListIndex: int, replyIndex: int):
@@ -49,7 +50,7 @@ class ServerModInterface(QWidget):
         result = json.loads(
             bytes(self.modBatchReplies[replyIndex].readAll().data()).decode()
         )
-        resultModList = [Mod(item) for item in result["data"]]
+        resultModList = [ModData(item) for item in result["data"]]
         ridNameMap: Dict[int, str] = {}
         for mod in resultModList:
             ridNameMap[mod.getResourceId()] = mod.getName()
@@ -59,13 +60,12 @@ class ServerModInterface(QWidget):
         ]
         for index, name in enumerate(sortedNameList):
             index += MOD_BATCH_REQUEST_MAX_MODS_PER_REQUEST * replyIndex
-            item = UneditableTableWidgetItem(name)
+            item = UneditableQTableWidgetItem(name)
             item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
             self.ui.tableWidget.setItem(index, 1, item)
         self.modBatchReplies[replyIndex].deleteLater()
-        # del self.persistences["modBatchRequest"]
 
-    def onTableModNameErrorOccured(
+    def onTableModNameErrorOccurred(
         self, replyIndex: int, error: QtNetwork.QNetworkReply.NetworkError
     ):
         InfoBar.error(
@@ -75,7 +75,6 @@ class ServerModInterface(QWidget):
             parent=self,
         )
         self.modBatchReplies[replyIndex].deleteLater()
-        # del self.persistences["modBatchRequest"]
 
     def initServerComboBox(self):
         self.ui.serverComboBox.setPlaceholderText("请选择一个服务器")

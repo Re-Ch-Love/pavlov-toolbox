@@ -6,8 +6,7 @@ import sys
 import time
 from typing import Any, List, Optional
 import requests
-
-from features.common import byteLengthToHumanReadable
+import app_config
 
 
 class Aria2RpcServerNotStartedException(Exception):
@@ -25,7 +24,7 @@ class Aria2RpcException(Exception):
 
 # 参考: https://aria2.document.top/zh/aria2c.html#id42
 class Aria2:
-    def __init__(self, debug=False):
+    def __init__(self):
         """
         参数`debug`：
             控制子进程的输出重定向
@@ -34,7 +33,6 @@ class Aria2:
             stderr=sys.stderr if self.debug else subprocess.DEVNULL,
             ```
         """
-        self.debug = debug
         self.rpcUrl = "http://127.0.0.1:6800/jsonrpc"
         self.rpcHeaders = {"Content-Type": "application/json"}
         self.rpcId: int = 0
@@ -53,8 +51,8 @@ class Aria2:
 
         self.process = subprocess.Popen(
             command,
-            stdout=sys.stdout if self.debug else subprocess.DEVNULL,
-            stderr=sys.stderr if self.debug else subprocess.DEVNULL,
+            stdout=sys.stdout if app_config.DEBUG else subprocess.DEVNULL,
+            stderr=sys.stderr if app_config.DEBUG else subprocess.DEVNULL,
         )
 
     def _request(self, method: str, *params: Any):
@@ -133,15 +131,5 @@ if __name__ == "__main__":
         ["https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"]
     )
     while True:
-        # print(aria2.getVersion())
-        # result = aria2.tellStatus(
-        #     gid,
-        #     # ["downloadSpeed", "completedLength", "totalLength", "connections"]
-        # )["result"]
-        # speedNum, speedUnit = byteCountToHumanReadable(
-        #     int(result["downloadSpeed"])
-        # )
-        # print(f"连接数：{result['connections']}，下载速度：{speedNum} {speedUnit}")
-        # print(result)
         print(aria2.tellActive())
         time.sleep(1)

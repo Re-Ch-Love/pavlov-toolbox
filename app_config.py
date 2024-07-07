@@ -1,3 +1,6 @@
+import os
+
+
 class Version:
     def __init__(self, x: int, y: int, z: int) -> None:
         self.x = x
@@ -21,4 +24,8 @@ class Version:
         else:
             return False
 
+
 VERSION = Version(0, 2, 0)
+DEBUG = True
+TEMP_DIR = os.path.join(os.getenv("TEMP", ""), "pavlov_toolbox_temp")
+IMPORT_MOD_TEMP_DIR = os.path.join(TEMP_DIR, "import_mod")

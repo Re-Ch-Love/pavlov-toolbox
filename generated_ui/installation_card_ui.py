@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'download_card.ui'
+## Form generated from reading UI file 'installation_card.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.7.2
 ##
@@ -16,23 +16,23 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QHBoxLayout, QLabel, QSizePolicy,
-    QVBoxLayout, QWidget)
+    QSpacerItem, QVBoxLayout, QWidget)
 
 from qfluentwidgets import (CaptionLabel, CardWidget, ProgressBar, TransparentToolButton)
 
-class Ui_DownloadCard(object):
-    def setupUi(self, DownloadCard):
-        if not DownloadCard.objectName():
-            DownloadCard.setObjectName(u"DownloadCard")
-        DownloadCard.resize(526, 118)
+class Ui_InstallationCard(object):
+    def setupUi(self, InstallationCard):
+        if not InstallationCard.objectName():
+            InstallationCard.setObjectName(u"InstallationCard")
+        InstallationCard.resize(526, 126)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(DownloadCard.sizePolicy().hasHeightForWidth())
-        DownloadCard.setSizePolicy(sizePolicy)
-        self.verticalLayout_2 = QVBoxLayout(DownloadCard)
+        sizePolicy.setHeightForWidth(InstallationCard.sizePolicy().hasHeightForWidth())
+        InstallationCard.setSizePolicy(sizePolicy)
+        self.verticalLayout_2 = QVBoxLayout(InstallationCard)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
-        self.frame = CardWidget(DownloadCard)
+        self.frame = CardWidget(InstallationCard)
         self.frame.setObjectName(u"frame")
         sizePolicy.setHeightForWidth(self.frame.sizePolicy().hasHeightForWidth())
         self.frame.setSizePolicy(sizePolicy)
@@ -57,11 +57,6 @@ class Ui_DownloadCard(object):
 
         self.horizontalLayout.addWidget(self.nameLabel)
 
-        self.toggleButton = TransparentToolButton(self.frame)
-        self.toggleButton.setObjectName(u"toggleButton")
-
-        self.horizontalLayout.addWidget(self.toggleButton)
-
         self.closeButton = TransparentToolButton(self.frame)
         self.closeButton.setObjectName(u"closeButton")
 
@@ -79,16 +74,25 @@ class Ui_DownloadCard(object):
 
         self.horizontalLayout_2.addWidget(self.progressBar)
 
+
+        self.verticalLayout.addLayout(self.horizontalLayout_2)
+
+        self.horizontalLayout_3 = QHBoxLayout()
+        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
+        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_3.addItem(self.horizontalSpacer)
+
         self.progressLabel = CaptionLabel(self.frame)
         self.progressLabel.setObjectName(u"progressLabel")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Maximum)
         sizePolicy2.setHorizontalStretch(0)
         sizePolicy2.setVerticalStretch(0)
         sizePolicy2.setHeightForWidth(self.progressLabel.sizePolicy().hasHeightForWidth())
         self.progressLabel.setSizePolicy(sizePolicy2)
         self.progressLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.horizontalLayout_2.addWidget(self.progressLabel)
+        self.horizontalLayout_3.addWidget(self.progressLabel)
 
         self.speedLabel = CaptionLabel(self.frame)
         self.speedLabel.setObjectName(u"speedLabel")
@@ -96,27 +100,26 @@ class Ui_DownloadCard(object):
         self.speedLabel.setSizePolicy(sizePolicy2)
         self.speedLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.horizontalLayout_2.addWidget(self.speedLabel)
+        self.horizontalLayout_3.addWidget(self.speedLabel)
 
 
-        self.verticalLayout.addLayout(self.horizontalLayout_2)
+        self.verticalLayout.addLayout(self.horizontalLayout_3)
 
 
         self.verticalLayout_2.addWidget(self.frame)
 
 
-        self.retranslateUi(DownloadCard)
+        self.retranslateUi(InstallationCard)
 
-        QMetaObject.connectSlotsByName(DownloadCard)
+        QMetaObject.connectSlotsByName(InstallationCard)
     # setupUi
 
-    def retranslateUi(self, DownloadCard):
-        DownloadCard.setWindowTitle(QCoreApplication.translate("DownloadCard", u"Form", None))
-        self.nameLabel.setText(QCoreApplication.translate("DownloadCard", u"<html><head/><body><p><span style=\" font-size:16pt;\">\u6587\u4ef6\u540d</span><span style=\" font-size:10pt; color:#737373;\">\uff08\u63d0\u793a\u6587\u4ef6\u540d\uff09</span></p></body></html>", None))
-        self.toggleButton.setText("")
+    def retranslateUi(self, InstallationCard):
+        InstallationCard.setWindowTitle(QCoreApplication.translate("InstallationCard", u"Form", None))
+        self.nameLabel.setText(QCoreApplication.translate("InstallationCard", u"<html><head/><body><p><span style=\" font-size:16pt;\">\u6587\u4ef6\u540d</span><span style=\" font-size:10pt; color:#737373;\">\uff08\u63d0\u793a\u6587\u4ef6\u540d\uff09</span></p></body></html>", None))
         self.closeButton.setText("")
         self.progressBar.setFormat("")
-        self.progressLabel.setText(QCoreApplication.translate("DownloadCard", u"- B / - B", None))
-        self.speedLabel.setText(QCoreApplication.translate("DownloadCard", u"- B/s", None))
+        self.progressLabel.setText(QCoreApplication.translate("InstallationCard", u"- B / - B", None))
+        self.speedLabel.setText(QCoreApplication.translate("InstallationCard", u"- B/s", None))
     # retranslateUi
 

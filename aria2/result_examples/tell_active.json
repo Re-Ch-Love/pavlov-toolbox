@@ -1,18 +1,19 @@
 {
-    "id": 4,
+    "id": 19,
     "jsonrpc": "2.0",
     "result": [
         {
-            "completedLength": "0",
-            "connections": "1",
+            "bitfield": "ffc0000003800000003f00000003c00000003f80000003800000003000000001000000001800000001f00000001f00000001c00000001ff0000001f00000001800000001fe00000000",
+            "completedLength": "84983808",
+            "connections": "16",
             "dir": "downloads",
-            "downloadSpeed": "0",
+            "downloadSpeed": "7899801",
             "files": [
                 {
-                    "completedLength": "0",
+                    "completedLength": "78643200",
                     "index": "1",
-                    "length": "0",
-                    "path": "",
+                    "length": "606605917",
+                    "path": "downloads/modfile_2804502.58.zip",
                     "selected": "true",
                     "uris": [
                         {
@@ -20,73 +21,73 @@
                             "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
                         },
                         {
-                            "status": "waiting",
+                            "status": "used",
                             "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
                         },
                         {
-                            "status": "waiting",
+                            "status": "used",
                             "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
                         },
                         {
-                            "status": "waiting",
+                            "status": "used",
                             "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
                         },
                         {
-                            "status": "waiting",
+                            "status": "used",
                             "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
                         },
                         {
-                            "status": "waiting",
+                            "status": "used",
                             "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
                         },
                         {
-                            "status": "waiting",
+                            "status": "used",
                             "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
                         },
                         {
-                            "status": "waiting",
+                            "status": "used",
                             "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
                         },
                         {
-                            "status": "waiting",
+                            "status": "used",
                             "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
                         },
                         {
-                            "status": "waiting",
+                            "status": "used",
                             "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
                         },
                         {
-                            "status": "waiting",
+                            "status": "used",
                             "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
                         },
                         {
-                            "status": "waiting",
+                            "status": "used",
                             "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
                         },
                         {
-                            "status": "waiting",
+                            "status": "used",
                             "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
                         },
                         {
-                            "status": "waiting",
+                            "status": "used",
                             "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
                         },
                         {
-                            "status": "waiting",
+                            "status": "used",
                             "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
                         },
                         {
-                            "status": "waiting",
+                            "status": "used",
                             "uri": "https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"
                         }
                     ]
                 }
             ],
-            "gid": "fd65c222e7802bd2",
-            "numPieces": "0",
+            "gid": "d1f6d8a3fac110c4",
+            "numPieces": "579",
             "pieceLength": "1048576",
             "status": "active",
-            "totalLength": "0",
+            "totalLength": "606605917",
             "uploadLength": "0",
             "uploadSpeed": "0"
         }

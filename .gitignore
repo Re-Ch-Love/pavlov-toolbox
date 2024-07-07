@@ -1,8 +1,9 @@
 dist
 build
 output
-source
 venv
 **/__pycache__
 .VSCodeCounter
 downloads
+assets/xmind
+.mypy_cache
