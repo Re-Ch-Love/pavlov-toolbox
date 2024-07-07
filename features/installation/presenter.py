@@ -55,6 +55,7 @@ class ModInstallationPresenter:
         self.cards.sort(key=lambda card: card.presenter.getJob().stage.value, reverse=True)
 
     def enablePollingUpdate(self):
+        self.pollingUpdate()
         self.timer.start()
 
     def disablePollingUpdate(self):

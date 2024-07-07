@@ -1,13 +1,14 @@
-import collections
 from enum import Enum
 import json
 import os
-import random
-import time
+import os
+import zipfile
+import shutil
+import app_config
 from typing import Callable, List, NamedTuple
-from uuid import uuid4
 
 from PySide6 import QtNetwork
+from PySide6.QtCore import QRunnable, QThreadPool
 from PySide6.QtNetwork import QNetworkAccessManager
 from PySide6.QtWidgets import QApplication
 from qfluentwidgets import QObject
@@ -15,6 +16,54 @@ from aria2.aria2 import Aria2
 from features.common.decorators import cached
 from features.common.download_info import DownloadInfo
 from features.common.mod import ModData, modBatchRequest
+from PySide6.QtCore import Signal
+
+
+def importMod(zipFilePath: str, modData: ModData):
+    """导入Mod
+
+    分为解压、补全、移动文件夹三个步骤"""
+    # 定义该Mod解压补全时的临时目录路径
+    tempDir = os.path.join(
+        app_config.IMPORT_MOD_TEMP_DIR, f"UGC{modData.getResourceId()}"
+    )
+    _unzipModData(tempDir, zipFilePath)
+    _writeTaintFile(tempDir, str(modData.getModFileLive("windows")))
+    _moveModTempDirToInstallationDir(tempDir)
+
+
+def _unzipModData(outputDir: str, zipFilePath: str):
+    # 如果输出目录存在，则清空
+    if os.path.exists(outputDir):
+        shutil.rmtree(outputDir)
+    else:
+        os.makedirs(outputDir)
+    outputDir = os.path.join(outputDir, "Data")
+    # 使用zipfile模块解压ZIP文件到目标目录
+    with zipfile.ZipFile(zipFilePath, "r") as zip_file:
+        zip_file.extractall(outputDir)
+
+
+def _writeTaintFile(outputDir: str, content: str):
+    taintFilePath = os.path.join(outputDir, "taint")
+    with open(taintFilePath, "w", encoding="utf-8") as file:
+        file.write(content)
+
+
+def _moveModTempDirToInstallationDir(sourceDir: str):
+    r"""将Mod从临时目录移动到安装目录"""
+    modInstallationDir = getModInstallationDir()
+    # 判断安装目录是否存在，如果不存在则新建
+    if not os.path.exists(modInstallationDir):
+        os.makedirs(modInstallationDir)
+    # 获取源目录最后一段（即目录名称）
+    modDirName = os.path.basename(sourceDir)
+    targetDir = os.path.join(modInstallationDir, modDirName)
+    # 如果目录存在，使用shutil递归删除目录
+    if os.path.exists(targetDir):
+        shutil.rmtree(targetDir)
+    # 使用shutil移动目录
+    shutil.move(sourceDir, targetDir)
 
 
 class ModInstallationStage(Enum):
@@ -35,6 +84,28 @@ aria2 = Aria2()
 aria2.startRpcServer()
 
 
+class ModImportWorkerSignals(QObject):
+    completed = Signal()
+    errorOccurred = Signal(str)
+
+
+class ModImportWorker(QRunnable):
+    def __init__(self, zipFilePath: str, modData: ModData):
+        super().__init__()
+        self.zipFilePath = zipFilePath
+        self.modData = modData
+        self.signals = ModImportWorkerSignals()
+
+    def run(self):
+        try:
+            importMod(self.zipFilePath, self.modData)
+        except Exception as e:
+            self.signals.errorOccurred.emit(str(e))
+        else:
+            self.signals.completed.emit()
+
+
+# Re-Ch: 我认为这个类写的非常的烂，后面有时间我会改掉它
 class ModInstallationJob:
     """
     表示Mod安装工作的类
@@ -45,17 +116,15 @@ class ModInstallationJob:
     stage为error时，errorReason字段表示错误原因
     """
 
-    def __init__(
-        self, gid: str, cardName: CardName, modInstallationDirPath: str
-    ) -> None:
+    def __init__(self, gid: str, cardName: CardName, modData: ModData) -> None:
         """
         参数 `urls`：内容为相同资源的url列表（可以只传入一个）
         """
         self.gid = gid
-        self.stage = ModInstallationStage.downloading
+        self.modData = modData
         self.cardName = cardName
+        self.stage = ModInstallationStage.downloading
         self.downloadInfo = DownloadInfo()
-        self.modInstallationDirPath = modInstallationDirPath
         self.errorReason: str = ""
 
     def update(self):
@@ -64,9 +133,10 @@ class ModInstallationJob:
                 self._updateDownloadInfo()
                 # TODO 补全其它状态信息
                 if self.downloadInfo.status == "complete":
+                    self._enterImportStatus()
                     self.stage = ModInstallationStage.importing
             case ModInstallationStage.importing:
-                self._updateImportStatus()
+                pass  # 不必处理，有槽函数修改
             case ModInstallationStage.succeed:
                 pass  # 不做处理
             case ModInstallationStage.error:
@@ -78,57 +148,74 @@ class ModInstallationJob:
         info.loadFromAria2RawData(raw["result"])
         self.downloadInfo = info
 
-    def _updateImportStatus(self):
-        pass
+    def _enterImportStatus(self):
+        """进入导入阶段的一些准备工作"""
+        # 创建并启动导入的线程
+        threadpool = QThreadPool.globalInstance()
+        self.worker = ModImportWorker(self.downloadInfo.fileRelativePath, self.modData)
+        self.worker.signals.completed.connect(self._onImportCompleted)
+        self.worker.signals.errorOccurred.connect(self._onImportErrorOccurred)
+        threadpool.start(self.worker)
+
+    def _onImportCompleted(self):
+        self.stage = ModInstallationStage.succeed
+        self.isImportComplete = True
+
+    def _onImportErrorOccurred(self, error: str):
+        self.stage = ModInstallationStage.error
+        self.importError = error
 
 
-class MockModInstallationJob(ModInstallationJob):
-    """
-    模拟ModInstallationJob，用于测试界面
-    """
+# class MockModInstallationJob(ModInstallationJob):
+#     """
+#     模拟ModInstallationJob，用于测试界面
+#     """
 
-    def __init__(self) -> None:
-        self.gid = str(uuid4())
-        self.stage = ModInstallationStage.downloading
-        self.cardName = CardName(f"模拟数据{self.gid[:6]}", self.gid)
-        self.downloadInfo = DownloadInfo()
-        self.modInstallationDirPath = ""
-        self.errorReason: str = ""
+#     def __init__(self) -> None:
+#         self.gid = str(uuid4())
+#         self.stage = ModInstallationStage.downloading
+#         self.cardName = CardName(f"模拟数据{self.gid[:6]}", self.gid)
+#         self.downloadInfo = DownloadInfo()
+#         self.modInstallationDirPath = ""
+#         self.errorReason: str = ""
 
-        # 随机3s-10s后下载完成
-        self.endDownloadingTime = time.time() + random.randint(3, 10)
-        # 下载完成后，随机1s-5s后导入完成
-        self.endImportingTime = self.endDownloadingTime + random.randint(1, 5)
+#         # 随机3s-10s后下载完成
+#         self.endDownloadingTime = time.time() + random.randint(3, 10)
+#         # 下载完成后，随机1s-5s后导入完成
+#         self.endImportingTime = self.endDownloadingTime + random.randint(1, 5)
 
-    def update(self):
-        match self.stage:
-            case ModInstallationStage.downloading:
-                if time.time() > self.endDownloadingTime:
-                    # print(f"{self.gid[:6]} enter importing stage")
-                    self.stage = ModInstallationStage.importing
-            case ModInstallationStage.importing:
-                if time.time() > self.endImportingTime:
-                    # print(f"{self.gid[:6]} enter succeed stage")
-                    self.stage = ModInstallationStage.succeed
-            case ModInstallationStage.succeed:
-                pass  # 不做处理
-            case ModInstallationStage.error:
-                pass  # 不做处理
+#     def update(self):
+#         match self.stage:
+#             case ModInstallationStage.downloading:
+#                 if time.time() > self.endDownloadingTime:
+#                     # print(f"{self.gid[:6]} enter importing stage")
+#                     self.stage = ModInstallationStage.importing
+#             case ModInstallationStage.importing:
+#                 if time.time() > self.endImportingTime:
+#                     # print(f"{self.gid[:6]} enter succeed stage")
+#                     self.stage = ModInstallationStage.succeed
+#             case ModInstallationStage.succeed:
+#                 pass  # 不做处理
+#             case ModInstallationStage.error:
+#                 pass  # 不做处理
 
 
 class ModInstallationManager:
     def __init__(self) -> None:
         self._jobs: List[ModInstallationJob] = []
 
-    def addJob(self, uris: List[str], cardName: CardName):
-        gid = aria2.addUri(uris)
-        job = ModInstallationJob(gid, cardName, "")
+    def addJob(self, modData: ModData, cardName: CardName):
+        gid = aria2.addUri([modData.getWindowsDownloadUrl()])
+        job = ModInstallationJob(gid, cardName, modData)
+        # 下面这条似乎没必要
+        # 先调用一下update,确保一些属性存在，否则如果在第一次update之前尝试获取update之后才有的属性，会抛出异常
+        # job.update()
         self._jobs.append(job)
         return job
 
-    def addMockJob(self, count: int):
-        for _ in range(count):
-            self._jobs.append(MockModInstallationJob())
+    # def addMockJob(self, count: int):
+    #     for _ in range(count):
+    #         self._jobs.append(MockModInstallationJob())
 
     def updateAllJobs(self):
         for job in self._jobs:
@@ -274,6 +361,7 @@ def checkLocalModsUpdate(
 
 
 if __name__ == "__main__":
+    # importMod(".\\downloads\\modfile_2802847.129.zip", ModData.constructFromServer(2802847))
     app = QApplication()
     print(f"local mods count: {len(getLocalMods())}")
 

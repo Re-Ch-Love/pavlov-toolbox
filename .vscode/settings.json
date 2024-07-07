@@ -31,9 +31,14 @@
         "**/node_modules/**",
     ],
     "cSpell.words": [
+        "Frameless",
         "MEIPASS",
         "modfile",
         "pyside",
-        "qfluentwidgets"
+        "qfluentwidgets",
+        "qframelesswindow",
+        "qtwebchannel",
+        "qwebchannel",
+        "webengine"
     ],
 }

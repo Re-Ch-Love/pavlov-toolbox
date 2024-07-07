@@ -23,6 +23,7 @@ class DownloadInfo:
         self.totalLength = 0
         self.completedLength = 0
         self.downloadSpeed = 0
+        self.fileRelativePath = ""
         # 只有已停止/已完成的下载才有error信息
         self.errorCode: Optional[str] = None
         self.errorMessage: Optional[str] = None

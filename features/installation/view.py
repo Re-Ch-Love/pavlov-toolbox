@@ -1,21 +1,15 @@
-from doctest import testfile
-from functools import partial
-from typing import Dict, List
-from PySide6.QtCore import QTimer, Qt
+from typing import List
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QApplication,
     QSizePolicy,
-    QSpacerItem,
     QVBoxLayout,
     QWidget,
 )
 
 from features.common.globals_objects import Globals
-from features.common.mod_installation import (
-    CardName,
-    MockModInstallationJob,
-    ModInstallationStage,
-)
+from features.common.mod import ModData
+from features.common.mod_installation import CardName
 from features.installation.card.view import ModInstallationCardView
 from qfluentwidgets import (
     Signal,
@@ -104,33 +98,36 @@ class DownloadManagerView(QWidget):
                 self.presenter.disablePollingUpdate()
 
 
-def test1(window: DownloadManagerView):
-    card1 = ModInstallationCardView(MockModInstallationJob())
-    card2 = ModInstallationCardView(MockModInstallationJob())
-    card3 = ModInstallationCardView(MockModInstallationJob())
-    cards = [card1, card2, card3]
-    window.scrollArea.renderCards(cards)
-    card2.presenter.model.stage = ModInstallationStage.importing
-    QTimer.singleShot(2000, lambda: window.scrollArea.renderCards(cards))
-    QTimer.singleShot(3000, lambda: cards.remove(card2))
-    QTimer.singleShot(4000, lambda: window.scrollArea.renderCards(cards))
+# def test1(window: DownloadManagerView):
+#     card1 = ModInstallationCardView(MockModInstallationJob())
+#     card2 = ModInstallationCardView(MockModInstallationJob())
+#     card3 = ModInstallationCardView(MockModInstallationJob())
+#     cards = [card1, card2, card3]
+#     window.scrollArea.renderCards(cards)
+#     card2.presenter.model.stage = ModInstallationStage.importing
+#     QTimer.singleShot(2000, lambda: window.scrollArea.renderCards(cards))
+#     QTimer.singleShot(3000, lambda: cards.remove(card2))
+#     QTimer.singleShot(4000, lambda: window.scrollArea.renderCards(cards))
 
 
-def test2(window: DownloadManagerView):
-    window.presenter.enablePollingUpdate()
-    Globals.modInstallationManager.addMockJob(5)
-    # Globals.modInstallationManager.addJob(
-    #     ["https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"],
-    #     CardName("Dust 2", "1"),
-    # )
+# def test2(window: DownloadManagerView):
+#     window.presenter.enablePollingUpdate()
+#     Globals.modInstallationManager.addMockJob(5)
+#     # Globals.modInstallationManager.addJob(
+#     #     ["https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"],
+#     #     CardName("Dust 2", "1"),
+#     # )
 
 
 if __name__ == "__main__":
     app = QApplication()
     window = DownloadManagerView()
-
+    window.presenter.enablePollingUpdate()
     # test1(window)
-    test2(window)
+    # test2(window)
+    Globals.modInstallationManager.addJob(
+        ModData.constructFromServer(2802847), CardName("测试文件", "")
+    )
 
     window.resize(800, 500)
     window.show()
