@@ -10,7 +10,7 @@ import app_config
 
 
 class Aria2RpcServerNotStartedException(Exception):
-    pass
+    """Aria2没启动就尝试调用接口时抛出"""
 
 
 class Aria2RpcException(Exception):

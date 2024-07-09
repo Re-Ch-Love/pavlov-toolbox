@@ -34,4 +34,4 @@ class UpdatesCheckThread(QThread):
 
 # TODO: 自动下载最新版
 def downloadLatest():
-    pass
+    raise NotImplementedError()

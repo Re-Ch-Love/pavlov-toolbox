@@ -65,17 +65,17 @@ class Ui_InstallationCard(object):
 
         self.verticalLayout.addLayout(self.horizontalLayout)
 
-        self.horizontalLayout_2 = QHBoxLayout()
-        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+        self.progressBarHLayout = QHBoxLayout()
+        self.progressBarHLayout.setObjectName(u"progressBarHLayout")
         self.progressBar = ProgressBar(self.frame)
         self.progressBar.setObjectName(u"progressBar")
         self.progressBar.setMaximum(1000)
         self.progressBar.setValue(88)
 
-        self.horizontalLayout_2.addWidget(self.progressBar)
+        self.progressBarHLayout.addWidget(self.progressBar)
 
 
-        self.verticalLayout.addLayout(self.horizontalLayout_2)
+        self.verticalLayout.addLayout(self.progressBarHLayout)
 
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")

@@ -1,11 +1,12 @@
 from functools import partial
 from PySide6 import QtNetwork
 from PySide6.QtCore import QUrl
+import aiohttp
 import requests
 from typing import Callable, Dict, List
 
 
-class ModInfoNotFound(Exception):
+class ModDataNotFound(Exception):
     def __init__(self, data_name: str, **kwargs) -> None:
         self.data_name = data_name
         self.kwargs = kwargs
@@ -21,13 +22,12 @@ class ModData:
 
     @staticmethod
     def constructFromServer(resourceID: int):
-        res = requests.get(
-            f"https://api.pavlov-toolbox.rech.asia/modio/v1/games/@pavlov/mods?_limit=1&id={resourceID}",
-        )
+        res = requests.get(f"https://api.pavlov-toolbox.rech.asia/modio/v1/games/@pavlov/mods?_limit=1&id={resourceID}")
         res.raise_for_status()
-        data = res.json()["data"]
+        jsonObj = res.json()
+        data = jsonObj["data"]
         if len(data) == 0:
-            raise ModInfoNotFound("mod数据对象", modId=resourceID)
+            raise ModDataNotFound("mod数据对象", modId=resourceID)
         return ModData(data[0])
 
     def getModFileLive(self, platformName: str) -> int:
@@ -35,7 +35,7 @@ class ModData:
         for platform in platform_list:
             if platform["platform"] == platformName:
                 return int(platform["modfile_live"])
-        raise ModInfoNotFound(f"目标平台", platformName=platformName, mod_raw_data=self.data)
+        raise ModDataNotFound(f"目标平台", platformName=platformName, mod_raw_data=self.data)
 
     def getWindowsDownloadUrl(self) -> str:
         return f"https://g-3959.modapi.io/v1/games/3959/mods/{self.data['id']}/files/{self.getModFileLive("windows")}/download"
@@ -45,6 +45,12 @@ class ModData:
 
     def getResourceId(self) -> int:
         return self.data["id"]
+    
+    def __str__(self) -> str:
+        return str(self.data)
+    
+    def __repr__(self) -> str:
+        return str(self.data)
 
 
 MOD_BATCH_REQUEST_URL = "https://api.pavlov-toolbox.rech.asia/modio/v1/games/@pavlov/mods?id-in=%s"
@@ -64,7 +70,7 @@ def modBatchRequest(naManager: QtNetwork.QNetworkAccessManager, modRidList: List
     参数:
     naManager: QNetworkAccessManager对象，用于发送网络请求。
     modRidList: 包含所有MOD ID的列表。
-    onFinished: 请求成功完成时调用的回调函数，接收一个参数表示发生错误的reply的索引。（例如索引为0则说明这是modRidList中第1个
+    onFinished: 请求成功完成时调用的回调函数，接收一个参数表示对应的reply的索引。（例如索引为0则说明这是modRidList中第1个
     onErrorOccurred: 请求发生错误时调用的回调函数，接收两个参数，分别是发生错误的reply的索引和错误类型。
 
     返回:

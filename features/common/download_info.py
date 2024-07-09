@@ -25,8 +25,8 @@ class DownloadInfo:
         self.downloadSpeed = 0
         self.fileRelativePath = ""
         # 只有已停止/已完成的下载才有error信息
-        self.errorCode: Optional[str] = None
-        self.errorMessage: Optional[str] = None
+        self.errorCode: str = ""
+        self.errorMessage: str = ""
 
     def loadFromAria2RawData(self, result: dict) -> None:
         self.status = result["status"]

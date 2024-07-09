@@ -43,12 +43,14 @@ class Ui_ServerModInterface(object):
         self.verticalLayout_2.addLayout(self.horizontalLayout)
 
         self.tableWidget = TableWidget(ServerModInterface)
-        if (self.tableWidget.columnCount() < 2):
-            self.tableWidget.setColumnCount(2)
+        if (self.tableWidget.columnCount() < 3):
+            self.tableWidget.setColumnCount(3)
         __qtablewidgetitem = QTableWidgetItem()
         self.tableWidget.setHorizontalHeaderItem(0, __qtablewidgetitem)
         __qtablewidgetitem1 = QTableWidgetItem()
         self.tableWidget.setHorizontalHeaderItem(1, __qtablewidgetitem1)
+        __qtablewidgetitem2 = QTableWidgetItem()
+        self.tableWidget.setHorizontalHeaderItem(2, __qtablewidgetitem2)
         self.tableWidget.setObjectName(u"tableWidget")
         self.tableWidget.horizontalHeader().setStretchLastSection(True)
         self.tableWidget.verticalHeader().setVisible(False)
@@ -66,8 +68,10 @@ class Ui_ServerModInterface(object):
         self.serverComboBox.setText(QCoreApplication.translate("ServerModInterface", u"PushButton", None))
         self.installButton.setText(QCoreApplication.translate("ServerModInterface", u"\u4e00\u952e\u5b89\u88c5", None))
         ___qtablewidgetitem = self.tableWidget.horizontalHeaderItem(0)
-        ___qtablewidgetitem.setText(QCoreApplication.translate("ServerModInterface", u"\u8d44\u6e90ID", None));
+        ___qtablewidgetitem.setText(QCoreApplication.translate("ServerModInterface", u"\u72b6\u6001", None));
         ___qtablewidgetitem1 = self.tableWidget.horizontalHeaderItem(1)
-        ___qtablewidgetitem1.setText(QCoreApplication.translate("ServerModInterface", u"\u540d\u79f0", None));
+        ___qtablewidgetitem1.setText(QCoreApplication.translate("ServerModInterface", u"\u8d44\u6e90ID", None));
+        ___qtablewidgetitem2 = self.tableWidget.horizontalHeaderItem(2)
+        ___qtablewidgetitem2.setText(QCoreApplication.translate("ServerModInterface", u"\u540d\u79f0", None));
     # retranslateUi
 

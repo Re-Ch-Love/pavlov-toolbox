@@ -1,9 +1,10 @@
 from typing import List
-from features.common.mod_installation import CardName
+from features.common.mod_installation import CardName, LocalModInfo, getLocalMods
 from features.common.mod import ModData
 from features.search.common import SearchMode
 from features.search.model import SearchModel
-from features.common.globals_objects import Globals
+from features.common.global_objects import Globals
+
 
 class SearchPresenter:
 
@@ -13,8 +14,11 @@ class SearchPresenter:
 
         self.view: SearchView = view
         self.model = SearchModel()
+        self.localMods: List[LocalModInfo]
 
     def search(self, input: str):
+        self.localMods = getLocalMods()
+
         def onSearchFinish(mods: List[ModData]):
             if len(mods) == 0:
                 self.view.promptNoSearchResult()
@@ -29,5 +33,22 @@ class SearchPresenter:
     def setSearchMode(self, mode: SearchMode):
         self.model.searchMode = mode
 
-    def install(self, url: str, modName: str):
-        Globals.modInstallationManager.addJob([url], CardName(modName, ""))
+    def install(self, modData: ModData):
+        Globals.modInstallationManager.addJob(modData)
+
+    def getActionButtonText(self, modData: ModData):
+        localModRids = [localMod.rid for localMod in self.localMods]
+        if modData.getResourceId() in localModRids:
+            matchedLocalMod = next(
+                (
+                    localMod
+                    for localMod in self.localMods
+                    if localMod.rid == modData.getResourceId()
+                )
+            )
+            if matchedLocalMod.taint == modData.getModFileLive("windows"):
+                return "已安装"
+            else:
+                return "更新"
+        else:
+            return "安装"

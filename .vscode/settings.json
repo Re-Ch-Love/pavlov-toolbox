@@ -31,10 +31,12 @@
         "**/node_modules/**",
     ],
     "cSpell.words": [
+        "aiohttp",
         "Frameless",
         "MEIPASS",
         "modfile",
         "pyside",
+        "qconfig",
         "qfluentwidgets",
         "qframelesswindow",
         "qtwebchannel",

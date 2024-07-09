@@ -1,5 +1,6 @@
 import os
 import sys
+import PySide6
 from PySide6.QtCore import QSize, QTimer
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
@@ -9,6 +10,7 @@ from qfluentwidgets import (
     FluentIcon,
     InfoBar,
     InfoBarPosition,
+    Signal,
     SplashScreen,
     Theme,
     setTheme,
@@ -17,21 +19,29 @@ from features.common.ui import ChineseMessageBox
 from features.installation.view import DownloadManagerView
 from features.search.view import SearchView
 from features.server_mod.server_mod import ServerModInterface
-from features.webview.theme_synced_webview import ThemeSyncedWebViewInterface
+from features.settings.view import SettingsView
+from features.webview.webview_interface import PavlovToolboxWebsiteInterface
 from update_manager import UpdatesCheckThread
 
 
 class AppMainWindow(FluentWindow):
+    # spell-checker: disable-next-line
+    # 用于在多个webview间同步主题，因为没有找到相关文档，为了避免bug，所以不用qconfig.themeChangedFinished 
+    # 发射对应WebViewInterface的uniqueName，防止自己发射自己接收，导致多运行一次
+    themeToggleSyncSignal = Signal(str)
     def __init__(self, debug=False):
         super().__init__()
         self.debug = debug
-        self.setMicaEffectEnabled(False)
-        self.resize(900, 700)
+        # 设置云母特效
+        # self.setMicaEffectEnabled(False)
+        self.resize(1000, 700)
         icon = QIcon(resourceAbsPath("icon.ico"))
         app.setWindowIcon(icon)
 
         self.initInterfaces()
         self.startCheckUpdatesThread()
+        self.navigationInterface.setExpandWidth(200)
+        self.navigationInterface.setCollapsible(False)
 
         self.stackedWidget.currentChanged.connect(self.onInterfaceChanged)
 
@@ -43,15 +53,16 @@ class AppMainWindow(FluentWindow):
         QTimer.singleShot(2000, self.splashScreen.finish)
 
     def initInterfaces(self):
-        self.homeInterface = ThemeSyncedWebViewInterface(
+        self.homeInterface = PavlovToolboxWebsiteInterface(
             "home", "https://pavlov-toolbox.rech.asia/app-home", self
         )
         self.searchInterface = SearchView()
         self.serverModInterface = ServerModInterface()
         self.downloadManagerInterface = DownloadManagerView()
-        self.helpInterface = ThemeSyncedWebViewInterface(
+        self.helpInterface = PavlovToolboxWebsiteInterface(
             "help", "https://pavlov-toolbox.rech.asia/usage", self
         )
+        self.settingsInterface = SettingsView()
 
         self.addSubInterface(self.homeInterface, FluentIcon.HOME, "首页")
         self.navigationInterface.addSeparator()
@@ -63,7 +74,7 @@ class AppMainWindow(FluentWindow):
             self.downloadManagerInterface, FluentIcon.CLOUD_DOWNLOAD, "管理Mod安装任务"
         )
         self.addSubInterface(
-            ThemeSyncedWebViewInterface(
+            PavlovToolboxWebsiteInterface(
                 "temp", "https://pavlov-toolbox.rech.asia/app-home", self
             ),
             FluentIcon.APPLICATION,
@@ -71,7 +82,7 @@ class AppMainWindow(FluentWindow):
         )  # TODO: 把本地Mod更新也放在这里面。Mod更新时对比API返回的taint和本地的taint，一次可以查询多个mod，使用参数id-in=2996823,2804502
         self.navigationInterface.addSeparator()
         self.addSubInterface(
-            ThemeSyncedWebViewInterface(
+            PavlovToolboxWebsiteInterface(
                 "temp2", "https://pavlov-toolbox.rech.asia/app-home", self
             ),
             FluentIcon.BOOK_SHELF,
@@ -79,10 +90,7 @@ class AppMainWindow(FluentWindow):
         )
         self.navigationInterface.addSeparator()
         self.addSubInterface(self.helpInterface, FluentIcon.QUESTION, "帮助")
-        # TODO: 加一个设置页，配置如下：
-        # - 是否启用云母特效
-        # - 是否自动下载依赖
-        # - 是否自动安装
+        self.addSubInterface(self.settingsInterface, FluentIcon.SETTING, "设置")
 
     def onInterfaceChanged(self):
         """
@@ -135,7 +143,7 @@ def resourceAbsPath(relativePath):
 
 
 if __name__ == "__main__":
-    setTheme(Theme.LIGHT)
+    # setTheme(Theme.LIGHT)
     app = QApplication()
     window = AppMainWindow(debug=True)
     window.show()

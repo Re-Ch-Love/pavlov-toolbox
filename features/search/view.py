@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+
 from functools import partial
 from typing import List
 from PySide6.QtCore import Qt
@@ -19,7 +20,7 @@ from PySide6.QtWidgets import (
 )
 from generated_ui.search_interface_ui import Ui_SearchInterface
 from features.common.ui import UneditableQTableWidgetItem
-from features.common.mod import ModData, ModInfoNotFound
+from features.common.mod import ModData, ModDataNotFound
 from features.search.common import SearchMode
 from features.search.presenter import SearchPresenter
 
@@ -86,20 +87,21 @@ class SearchView(QWidget, Ui_SearchInterface):
         for index, mod in enumerate(data):
             try:
                 downloadUrl = mod.getWindowsDownloadUrl()
-            except ModInfoNotFound:
+            except ModDataNotFound:
                 downloadUrl = ""
             modName = mod.getName()
             if downloadUrl:
                 installButton = PrimaryPushButton()
-                installButton.setText("安装")
+                installButtonText = self.presenter.getActionButtonText(mod)
+                if installButtonText == "已安装":
+                    installButton.setEnabled(False)
+                installButton.setText(installButtonText)
                 installButton.setFixedSize(80, 30)
                 installButton.setSizePolicy(
                     QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
                 )
                 # 这里必须要用偏函数，不能用lambda闭包，否则下次循环时，downloadButton会被修改，则所有按钮的回调函数的参数都是同一个url
-                installButton.clicked.connect(
-                    partial(self.onInstall, installButton, downloadUrl, modName)
-                )
+                installButton.clicked.connect(partial(self.onInstall, installButton, mod))
                 self.resultTableWidget.setCellWidget(index, 0, installButton)
             else:
                 item = UneditableQTableWidgetItem("不可安装")
@@ -115,9 +117,11 @@ class SearchView(QWidget, Ui_SearchInterface):
                 index, 2, UneditableQTableWidgetItem(modName)
             )
 
-    def onInstall(self, pbtn: PushButton, url: str, modName: str):
-        pbtn.setText("安装中")
-        self.presenter.install(url, modName)
+    def onInstall(self, button: PushButton, modData: ModData):
+        button.setText("安装中")
+        self.presenter.install(modData)
+    
+
 
 
 if __name__ == "__main__":
@@ -125,4 +129,5 @@ if __name__ == "__main__":
     window = SearchView()
     window.show()
     window.presenter.search("inferno")
-    app.exec()
+    # app.exec()
+

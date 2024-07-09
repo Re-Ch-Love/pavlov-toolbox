@@ -2,18 +2,23 @@ from enum import Enum
 import json
 import os
 import os
+import random
+import time
+from uuid import uuid4
 import zipfile
 import shutil
 import app_config
-from typing import Callable, List, NamedTuple
+from typing import Callable, Dict, List, NamedTuple, Optional
 
 from PySide6 import QtNetwork
-from PySide6.QtCore import QRunnable, QThreadPool
+from PySide6.QtCore import QRunnable, QThreadPool, QTimer
 from PySide6.QtNetwork import QNetworkAccessManager
 from PySide6.QtWidgets import QApplication
 from qfluentwidgets import QObject
 from aria2.aria2 import Aria2
-from features.common.decorators import cached
+from features.common.mirrors import getFrostBladeMirrorUrl
+from features.common.mod_dependencies import ModDependenciesProcessor
+from features.common.tricks import Fn, cached
 from features.common.download_info import DownloadInfo
 from features.common.mod import ModData, modBatchRequest
 from PySide6.QtCore import Signal
@@ -30,6 +35,8 @@ def importMod(zipFilePath: str, modData: ModData):
     _unzipModData(tempDir, zipFilePath)
     _writeTaintFile(tempDir, str(modData.getModFileLive("windows")))
     _moveModTempDirToInstallationDir(tempDir)
+    # 安装完成后删除原始文件
+    os.remove(zipFilePath)
 
 
 def _unzipModData(outputDir: str, zipFilePath: str):
@@ -147,6 +154,9 @@ class ModInstallationJob:
         info = DownloadInfo()
         info.loadFromAria2RawData(raw["result"])
         self.downloadInfo = info
+        if info.errorCode:
+            self.stage = ModInstallationStage.error
+            self.errorReason = f"code: {info.errorCode}, msg: {info.errorMessage}"
 
     def _enterImportStatus(self):
         """进入导入阶段的一些准备工作"""
@@ -166,66 +176,130 @@ class ModInstallationJob:
         self.importError = error
 
 
-# class MockModInstallationJob(ModInstallationJob):
-#     """
-#     模拟ModInstallationJob，用于测试界面
-#     """
+class MockModInstallationJob(ModInstallationJob):
+    """
+    模拟ModInstallationJob，用于测试界面
+    """
 
-#     def __init__(self) -> None:
-#         self.gid = str(uuid4())
-#         self.stage = ModInstallationStage.downloading
-#         self.cardName = CardName(f"模拟数据{self.gid[:6]}", self.gid)
-#         self.downloadInfo = DownloadInfo()
-#         self.modInstallationDirPath = ""
-#         self.errorReason: str = ""
+    def __init__(
+        self,
+        downloadTime: Optional[int] = None,
+        importTime: Optional[int] = None,
+        willOccurError: Optional[bool] = None,
+    ) -> None:
+        self.gid = str(uuid4())
+        self.stage = ModInstallationStage.downloading
+        self.cardName = CardName(f"模拟数据{self.gid[:6]}", self.gid)
+        self.downloadInfo = DownloadInfo()
+        self.modInstallationDirPath = ""
+        self.errorReason: str = ""
 
-#         # 随机3s-10s后下载完成
-#         self.endDownloadingTime = time.time() + random.randint(3, 10)
-#         # 下载完成后，随机1s-5s后导入完成
-#         self.endImportingTime = self.endDownloadingTime + random.randint(1, 5)
+        # 随机3s-10s后下载完成
+        self.endDownloadingTime = (
+            time.time() + random.randint(3, 10)
+            if downloadTime is None
+            else downloadTime
+        )
+        # 下载完成后，随机1s-5s后导入完成
+        self.endImportingTime = (
+            self.endDownloadingTime + random.randint(1, 5)
+            if importTime is None
+            else importTime
+        )
+        # 显示错误还是成功
+        self.willOccurError = (
+            random.choice([True, False]) if willOccurError is None else willOccurError
+        )
 
-#     def update(self):
-#         match self.stage:
-#             case ModInstallationStage.downloading:
-#                 if time.time() > self.endDownloadingTime:
-#                     # print(f"{self.gid[:6]} enter importing stage")
-#                     self.stage = ModInstallationStage.importing
-#             case ModInstallationStage.importing:
-#                 if time.time() > self.endImportingTime:
-#                     # print(f"{self.gid[:6]} enter succeed stage")
-#                     self.stage = ModInstallationStage.succeed
-#             case ModInstallationStage.succeed:
-#                 pass  # 不做处理
-#             case ModInstallationStage.error:
-#                 pass  # 不做处理
+    def update(self):
+        match self.stage:
+            case ModInstallationStage.downloading:
+                if time.time() > self.endDownloadingTime:
+                    # print(f"{self.gid[:6]} enter importing stage")
+                    self.stage = ModInstallationStage.importing
+            case ModInstallationStage.importing:
+                if time.time() > self.endImportingTime:
+                    # print(f"{self.gid[:6]} enter succeed stage")
+                    if self.willOccurError:
+                        self.stage = ModInstallationStage.error
+                        self.errorReason = "测试错误"
+                    else:
+                        self.stage = ModInstallationStage.succeed
+
+            case ModInstallationStage.succeed:
+                pass  # 不做处理
+            case ModInstallationStage.error:
+                pass  # 不做处理
 
 
 class ModInstallationManager:
     def __init__(self) -> None:
         self._jobs: List[ModInstallationJob] = []
+        self.dependencyProcessors: Dict[int, ModDependenciesProcessor] = {}
 
-    def addJob(self, modData: ModData, cardName: CardName):
-        gid = aria2.addUri([modData.getWindowsDownloadUrl()])
+    def addJob(self, modData: ModData, cardName: CardName | None = None):
+        if cardName is None:
+            cardName = CardName(modData.getName(), "")
+        if checkIsInstalledAndLatest(modData):
+            return
+        downloadUrls = [modData.getWindowsDownloadUrl()]
+        # 尝试获取镜像站链接
+        # mirrorUrl = getFrostBladeMirrorUrl(modData.getResourceId())
+        # if mirrorUrl:
+        #     downloadUrls.append(mirrorUrl)
+        # if app_config.DEBUG:
+        #     print(f"下载地址：{downloadUrls}")
+        gid = aria2.addUri(downloadUrls)
         job = ModInstallationJob(gid, cardName, modData)
-        # 下面这条似乎没必要
-        # 先调用一下update,确保一些属性存在，否则如果在第一次update之前尝试获取update之后才有的属性，会抛出异常
-        # job.update()
         self._jobs.append(job)
+        # 检查依赖项
+        self.addJobDependencies(modData)
         return job
 
-    # def addMockJob(self, count: int):
-    #     for _ in range(count):
-    #         self._jobs.append(MockModInstallationJob())
+    def addJobDependencies(self, modData: ModData):
+        obj = ModDependenciesProcessor(
+            modData,
+            self._getModDependenciesFinish,
+            self._getModDependenciesError,
+        )
+        # 因为ModDependenciesProcessor是一个QObject，如果不提供parent，它会被回收掉。
+        # 而ModInstallationManger在应用中是一个全局单例，所以只要把ModDependenciesProcessor的实例保存在属性的字典中
+        # 就不会被回收了，但是用完了要用del self.dependencyProcessors[modData.getResourceId()]来释放，不然会内存溢出
+        self.dependencyProcessors[modData.getResourceId()] = obj
+
+    def _getModDependenciesFinish(self, modData: ModData, dependencies: List[ModData]):
+        for dependency in dependencies:
+            self.addJob(
+                dependency,
+                CardName(dependency.getName(), f"{modData.getName()} 的依赖"),
+            )
+        del self.dependencyProcessors[modData.getResourceId()]
+
+    def _getModDependenciesError(self, modData: ModData, error: str):
+        # 暂时没必要对错误作处理
+        print(f"{modData.getName()} 的依赖获取失败：{error}")
+        del self.dependencyProcessors[modData.getResourceId()]
+
+    def addMockJob(self, count: int):
+        Fn(lambda: self._jobs.append(MockModInstallationJob())).repeat(count)
 
     def updateAllJobs(self):
         for job in self._jobs:
             job.update()
-            if job.stage == ModInstallationStage.succeed:
-                self._jobs.remove(job)
+            # if job.stage == ModInstallationStage.succeed:
+            # self._jobs.remove(job)
 
     def getAllJobs(self):
         self.updateAllJobs()
         return self._jobs
+
+    def showJobs(self):
+        print("\n".join([f"{job.cardName} in {job.stage}" for job in self._jobs]))
+
+    def removeJob(self, job: ModInstallationJob):
+        self._jobs.remove(job)
+        if job.stage == ModInstallationStage.downloading:
+            aria2.remove(job.gid)
 
 
 class ModInstallationDirException(Exception):
@@ -286,21 +360,40 @@ def getLocalMods():
     return modPaths
 
 
-class _CheckLocalModsUpdate:
+def checkIsInstalledAndLatest(modData: ModData):
+    localMods = getLocalMods()
+    # 在localMods中寻找id与modData一样的元组
+    for localMod in localMods:
+        if (
+            localMod.rid == modData.getResourceId()
+            and localMod.taint == modData.getModFileLive("windows")
+        ):
+            return True
+    return False
+
+
+class LocalModsUpdateChecker(QObject):
+    """
+    检查本地Mod更新
+
+    参数：
+    finishCallback: 本地Mod更新检查完成时的回调，接收一个List[int]，代表需要更新的Mod的RID，该方法只会被调用一次，且如果错误发生，则不会被调用。
+    errorCallback: 本地Mod更新检查出错时的回调，接收一个str，代表错误原因。该方法只会被调用一次。
+    """
+
     def __init__(
         self,
         finishCallback: Callable[[List[ModDownloadInfo]], None],
         errorCallback: Callable[[str], None],
+        parent: QObject | None = None,
     ) -> None:
-        """参数参考 checkLocalModsUpdate()"""
-        self.naManager = QNetworkAccessManager()
+        super().__init__(parent)
+        self.naManager = QNetworkAccessManager(self)
         self.finishCallback = finishCallback
         self.errorCallback = errorCallback
         self.receivedMods: List[ModData] = []
         self.errorOccurred = False
         self.receivedCount = 0
-
-    def checkLocalModsUpdate(self):
         self.localModsInfo = getLocalMods()
 
         self.replies = modBatchRequest(
@@ -345,24 +438,7 @@ class _CheckLocalModsUpdate:
         self.errorCallback(error.name)
 
 
-def checkLocalModsUpdate(
-    finishCallback: Callable[[List[ModDownloadInfo]], None],
-    errorCallback: Callable[[str], None],
-):
-    """检查本地Mod更新
-
-    参数：
-    finishCallback: 本地Mod更新检查完成时的回调，接收一个List[int]，代表需要更新的Mod的RID，该方法只会被调用一次，且如果错误发生，则不会被调用。
-    errorCallback: 本地Mod更新检查出错时的回调，接收一个str，代表错误原因。该方法只会被调用一次。
-    """
-
-    obj = _CheckLocalModsUpdate(finishCallback, errorCallback)
-    obj.checkLocalModsUpdate()
-
-
-if __name__ == "__main__":
-    # importMod(".\\downloads\\modfile_2802847.129.zip", ModData.constructFromServer(2802847))
-    app = QApplication()
+def test1(app):
     print(f"local mods count: {len(getLocalMods())}")
 
     def finishCallback(ls):
@@ -372,5 +448,20 @@ if __name__ == "__main__":
     def errorCallback(reason):
         print(f"error: {reason}")
 
-    checkLocalModsUpdate(finishCallback, errorCallback)
-    app.exec()
+    LocalModsUpdateChecker(finishCallback, errorCallback, app)
+
+
+# def test2():
+#     # 这是一个有依赖的Mod
+#     manager = ModInstallationManager()
+#     mod = ModData.constructFromServer(3243988)
+#     manager.addJob(mod, CardName(mod.getName(), ""))
+#     QTimer.singleShot(3000, lambda: manager.showJobs())
+
+
+if __name__ == "__main__":
+    # importMod(".\\downloads\\modfile_2802847.129.zip", ModData.constructFromServer(2802847))
+    app = QApplication()
+    # test1(app)
+    # test2()
+    # app.exec()

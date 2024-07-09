@@ -83,7 +83,7 @@
        </layout>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <layout class="QHBoxLayout" name="progressBarHLayout">
         <item>
          <widget class="ProgressBar" name="progressBar">
           <property name="maximum">

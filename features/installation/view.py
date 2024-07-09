@@ -1,5 +1,6 @@
+import random
 from typing import List
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QTimer, Qt
 from PySide6.QtWidgets import (
     QApplication,
     QSizePolicy,
@@ -7,9 +8,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from features.common.globals_objects import Globals
+from features.common.global_objects import Globals
 from features.common.mod import ModData
-from features.common.mod_installation import CardName
+from features.common.mod_installation import (
+    CardName,
+    MockModInstallationJob,
+    ModInstallationStage,
+)
+from features.common.tricks import Fn
 from features.installation.card.view import ModInstallationCardView
 from qfluentwidgets import (
     Signal,
@@ -119,15 +125,44 @@ class DownloadManagerView(QWidget):
 #     # )
 
 
+# def test3(window: DownloadManagerView):
+#     Globals.modInstallationManager.addJob(
+#         ModData.constructFromServer(2802847), CardName("测试文件", "")
+#     )
+
+
+def test4(window: DownloadManagerView):
+    Globals.modInstallationManager.addMockJob(3)
+
+
+def test5(window: DownloadManagerView):
+    card_dl = ModInstallationCardView(MockModInstallationJob(1, 1, True))
+    card_dl.presenter.model.stage = ModInstallationStage.downloading
+    card_import = ModInstallationCardView(MockModInstallationJob(1, 2, willOccurError=True))
+    card_import.presenter.model.stage = ModInstallationStage.importing
+    card_success = ModInstallationCardView(MockModInstallationJob(1, 3, willOccurError=True))
+    card_success.presenter.model.stage = ModInstallationStage.succeed
+    card_error = ModInstallationCardView(MockModInstallationJob(1, 4, willOccurError=True))
+    card_error.presenter.model.stage = ModInstallationStage.error
+    cards = [card_dl, card_import, card_success, card_error]
+    random.shuffle(cards)
+    # print(",".join([card.presenter.model.stage.name for card in cards]))
+    # cards.sort(key=lambda card: card.presenter.getJob().stage.value)
+    # print(",".join([card.presenter.model.stage.name for card in cards]))
+    window.presenter.cards = cards
+    window.presenter._sortCards()
+    print(",".join([card.presenter.model.stage.name for card in cards]))
+    window.scrollArea.renderCards(window.presenter.cards)
+
+
 if __name__ == "__main__":
     app = QApplication()
     window = DownloadManagerView()
     window.presenter.enablePollingUpdate()
     # test1(window)
     # test2(window)
-    Globals.modInstallationManager.addJob(
-        ModData.constructFromServer(2802847), CardName("测试文件", "")
-    )
+    test4(window)
+    # test5(window)
 
     window.resize(800, 500)
     window.show()

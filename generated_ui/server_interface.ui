@@ -42,6 +42,11 @@
      </attribute>
      <column>
       <property name="text">
+       <string>状态</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
        <string>资源ID</string>
       </property>
      </column>

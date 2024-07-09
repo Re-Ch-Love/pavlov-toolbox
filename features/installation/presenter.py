@@ -3,7 +3,7 @@ from re import I
 from typing import List
 from PySide6.QtCore import QTimer
 
-from features.common.globals_objects import Globals
+from features.common.global_objects import Globals
 from features.installation.card.view import ModInstallationCardView
 
 
@@ -46,13 +46,8 @@ class ModInstallationPresenter:
     def _sortCards(self):
         """
         为卡片进行排序
-
-        顺序：
-        - 正在下载的卡片
-        - 正在导入的卡片
-        - 其他卡片
         """
-        self.cards.sort(key=lambda card: card.presenter.getJob().stage.value, reverse=True)
+        self.cards.sort(key=lambda card: card.presenter.getJob().stage.value)
 
     def enablePollingUpdate(self):
         self.pollingUpdate()
