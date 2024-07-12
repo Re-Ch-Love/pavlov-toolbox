@@ -46,8 +46,8 @@ class Aria2:
         executablePath = os.path.join("aria2", "aria2c.exe")
         configPath = os.path.join("aria2", "aria2.conf")
         self.rpcSecret = secrets.token_hex(32)
-        # print(self.rpcSecret)
-        command = f"{executablePath} --conf-path {configPath} --rpc-secret {self.rpcSecret}".split()
+        command = f"{executablePath} --conf-path {configPath} --rpc-secret {self.rpcSecret}"
+        command = command.split()
 
         self.process = subprocess.Popen(
             command,

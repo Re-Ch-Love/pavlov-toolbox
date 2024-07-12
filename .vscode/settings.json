@@ -10,6 +10,9 @@
             "includeAllSymbols": true
         }
     ],
+    "black-formatter.args": [
+        "--line-length 100"
+    ],
     "terminal.integrated.env.windows": {
         "PYTHONPATH": "${workspaceFolder}"
     },
@@ -29,9 +32,9 @@
         "**/.gitignore",
         "**/.vscode/**",
         "**/node_modules/**",
+        "generated_ui"
     ],
     "cSpell.words": [
-        "aiohttp",
         "Frameless",
         "MEIPASS",
         "modfile",
@@ -39,8 +42,9 @@
         "qconfig",
         "qfluentwidgets",
         "qframelesswindow",
-        "qtwebchannel",
-        "qwebchannel",
+        "qreq",
+        "qrequest",
         "webengine"
     ],
+    "Lingma.methodQuickOperation": false
 }

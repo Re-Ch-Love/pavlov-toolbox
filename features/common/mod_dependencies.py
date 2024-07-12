@@ -6,11 +6,10 @@ from PySide6 import QtNetwork
 from PySide6.QtCore import QUrl
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply
 from PySide6.QtWidgets import QApplication
-import aiohttp
 from qfluentwidgets import QObject
-import requests
 
-from features.common.mod import ModData, modBatchRequest
+from features.common.mod import MOD_BATCH_REQUEST_URL, ModData, modBatchRequest
+from features.common.qrequest import QDataPromise, QPromise, QRequestPromise, QRequestReady
 
 
 DEPENDENCIES_URL = "https://api.pavlov-toolbox.rech.asia/modio/v1/games/3959/mods/%d/dependencies?recursive=true"
@@ -18,8 +17,6 @@ DEPENDENCIES_URL = "https://api.pavlov-toolbox.rech.asia/modio/v1/games/3959/mod
 class ModDependenciesProcessor(QObject):
     """
     获取Mod依赖
-
-    这是一个QObject，其生命周期与parent绑定
     """
 
     def __init__(
@@ -79,18 +76,31 @@ class ModDependenciesProcessor(QObject):
         pass
 
 
-# def getModDependencies(rid: int) -> List[ModData]:
-#     response = requests.get(DEPENDENCIES_URL % rid)
-#     response.raise_for_status()
-#     jsonObj = response.json()
-#     if jsonObj["result_total"] == 0:
-#         return []
-#     else:
-#         data = jsonObj["data"]
-#         # 因为获取依赖Mod时返回的数据格式，与获取Mod的不一样，所以这里需要用rid再请求一次
-#         # TODO 把这里改成批量处理，否则每个modData一个请求太多了
-#         mods = [ModData.constructFromServer(item["mod_id"]) for item in data]
-#         return mods
+def getModDependencies(request: QRequestReady, rid: int) -> QPromise:
+    def getDependencies(content: bytes) -> List[int]:
+        jsonObj = json.loads(content)
+        if jsonObj["result_total"] == 0:
+            return []
+        else:
+            data = jsonObj["data"]
+            # 因为获取依赖Mod时返回的数据格式，与获取Mod的不一样，所以这里需要用rid再请求一次
+            return [item["mod_id"] for item in data]
+    def dependenciesToModData(rids: List[int] | None) -> QPromise:
+        nonlocal request
+        if not rids:
+            return QDataPromise([])
+        else:
+            ridsParam = ",".join([str(rid) for rid in rids])
+            return (
+                request.get(MOD_BATCH_REQUEST_URL % ridsParam)
+                    .then(lambda content: [ModData(item) for item in json.loads(content)["data"]])
+            )
+        
+    return (request.get(DEPENDENCIES_URL % rid)
+            .then(getDependencies)
+            .then(dependenciesToModData))
+
+        
 
 
 if __name__ == "__main__":
@@ -109,6 +119,7 @@ if __name__ == "__main__":
         2804502,
         2879562,
         2867687,
+
         # 2871454,
         # 3265534,
         # 2856317,
@@ -121,14 +132,21 @@ if __name__ == "__main__":
         # 3901501,
     ]
 
-    def onFinish(modData: ModData, dependencies: List[ModData]):
-        print(modData.getResourceId(), dependencies)
+    # def onFinish(modData: ModData, dependencies: List[ModData]):
+    #     print(modData.getResourceId(), dependencies)
 
-    def onError(modData: ModData, reason: str):
-        print(modData.getResourceId(), f"error: {reason}")
+    # def onError(modData: ModData, reason: str):
+    #     print(modData.getResourceId(), f"error: {reason}")
 
-    for rid in modList:
-        ModDependenciesProcessor(
-            ModData.constructFromServer(rid), onFinish, onError, app
-        )
-    # app.exec()
+    # for rid in modList:
+    #     ModDependenciesProcessor(
+    #         ModData.constructFromServer(rid), onFinish, onError, app
+    #     )
+
+    # 3243988 有依赖
+    (
+        getModDependencies(QRequestReady(app), 3243988)
+            .then(lambda modDataList: print([modData.getResourceId() for modData in modDataList]))
+            .done()
+    )
+    app.exec()

@@ -6,12 +6,13 @@ from PySide6.QtCore import QUrl
 from PySide6.QtWidgets import QApplication, QTableWidgetItem, QWidget
 from PySide6 import QtNetwork
 from features.common.global_objects import Globals
+from features.common.local_mods import getLocalMods
 from features.common.mod import (
     MOD_BATCH_REQUEST_MAX_MODS_PER_REQUEST,
     ModData,
     modBatchRequest,
 )
-from features.common.mod_installation import CardName, getLocalMods
+from features.common.mod_installation import CardName
 from features.common.ui import UneditableQTableWidgetItem
 from generated_ui.server_interface_ui import Ui_ServerModInterface
 from qfluentwidgets import InfoBar, InfoBarPosition
@@ -35,7 +36,7 @@ class ServerModInterface(QWidget):
         if not self.selectedMods:
             return
         for mod in self.selectedMods:
-            Globals.modInstallationManager.addJob(mod)
+            ModInstallationManager.getInstance().addJob(mod)
 
     def updateTableWidget(self, serverIndex: int):
         if self.serversModList is None or serverIndex < 0:

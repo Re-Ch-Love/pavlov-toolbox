@@ -1,7 +1,6 @@
 from functools import partial
 from PySide6 import QtNetwork
 from PySide6.QtCore import QUrl
-import aiohttp
 import requests
 from typing import Callable, Dict, List
 

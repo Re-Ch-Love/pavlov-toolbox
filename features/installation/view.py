@@ -13,6 +13,7 @@ from features.common.mod import ModData
 from features.common.mod_installation import (
     CardName,
     MockModInstallationJob,
+    ModInstallationManager,
     ModInstallationStage,
 )
 from features.common.tricks import Fn
@@ -118,21 +119,21 @@ class DownloadManagerView(QWidget):
 
 # def test2(window: DownloadManagerView):
 #     window.presenter.enablePollingUpdate()
-#     Globals.modInstallationManager.addMockJob(5)
-#     # Globals.modInstallationManager.addJob(
+#     ModInstallationManager.getInstance().addMockJob(5)
+#     # ModInstallationManager.getInstance().addJob(
 #     #     ["https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"],
 #     #     CardName("Dust 2", "1"),
 #     # )
 
 
 # def test3(window: DownloadManagerView):
-#     Globals.modInstallationManager.addJob(
+#     ModInstallationManager.getInstance().addJob(
 #         ModData.constructFromServer(2802847), CardName("测试文件", "")
 #     )
 
 
 def test4(window: DownloadManagerView):
-    Globals.modInstallationManager.addMockJob(3)
+    ModInstallationManager.getInstance().addMockJob(3)
 
 
 def test5(window: DownloadManagerView):

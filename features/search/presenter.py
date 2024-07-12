@@ -1,5 +1,6 @@
 from typing import List
-from features.common.mod_installation import CardName, LocalModInfo, getLocalMods
+from features.common.local_mods import LocalModInfo, getLocalMods
+from features.common.mod_installation import CardName, ModInstallationManager
 from features.common.mod import ModData
 from features.search.common import SearchMode
 from features.search.model import SearchModel
@@ -34,7 +35,7 @@ class SearchPresenter:
         self.model.searchMode = mode
 
     def install(self, modData: ModData):
-        Globals.modInstallationManager.addJob(modData)
+        ModInstallationManager.getInstance().addJob(modData)
 
     def getActionButtonText(self, modData: ModData):
         localModRids = [localMod.rid for localMod in self.localMods]

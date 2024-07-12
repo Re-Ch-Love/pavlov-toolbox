@@ -7,3 +7,4 @@ venv
 downloads
 assets/xmind
 .mypy_cache
+**/aria2.log

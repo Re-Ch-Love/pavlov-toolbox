@@ -70,4 +70,4 @@ class ModInstallationCardPresenter:
         return self.model
     
     def close(self):
-        Globals.modInstallationManager.removeJob(self.model)
+        ModInstallationManager.getInstance().removeJob(self.model)

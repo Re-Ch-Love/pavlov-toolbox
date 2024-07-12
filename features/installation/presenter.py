@@ -4,6 +4,7 @@ from typing import List
 from PySide6.QtCore import QTimer
 
 from features.common.global_objects import Globals
+from features.common.mod_installation import ModInstallationManager
 from features.installation.card.view import ModInstallationCardView
 
 
@@ -23,7 +24,7 @@ class ModInstallationPresenter:
     def pollingUpdate(self):
         # self.view.scrollArea.updateCards()
         # 获取当前的jobs和本地jobs的集合
-        currentJobs = set(Globals.modInstallationManager.getAllJobs())
+        currentJobs = set(ModInstallationManager.getInstance().getAllJobs())
         localJobs = set([card.presenter.getJob() for card in self.cards])
         # 从当前的jobs 减去 本地jobs，就是新增的jobs
         newJobs = currentJobs - localJobs
