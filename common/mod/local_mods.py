@@ -61,7 +61,7 @@ def getLocalMods():
         # 去除开头的UGC就是RID
         rid = int(modDirName[len("UGB") :])
         taintPath = os.path.join(modDirFullPath, "taint")
-        with open(taintPath, "r") as f:
+        with open(taintPath, "r", encoding="utf-8") as f:
             taint = int(f.readline().strip())
 
         modPaths.append(LocalModInfo(rid, taint))
@@ -72,7 +72,9 @@ def checkIsInstalledAndLatest(modData: ModData):
     localMods = getLocalMods()
     # 在localMods中寻找id与modData一样的元组
     for localMod in localMods:
-        if localMod.resourceId == modData.resourceId and localMod.taint == modData.getModFileLive("windows"):
+        if localMod.resourceId == modData.resourceId and localMod.taint == modData.getModFileLive(
+            "windows"
+        ):
             return True
     return False
 
@@ -125,7 +127,9 @@ class LocalModsUpdateChecker(QObject):
                 remoteFileLive = remoteMod.getModFileLive("windows")
                 # 类似列表推导式的语法，把方括号换成圆括号表示这是一个生成器
                 # 然后用next取出第一个值，避免一次性取出全部值
-                localFileLive = next((modInfo for modInfo in self.localModsInfo if modInfo.resourceId == rid)).taint
+                localFileLive = next(
+                    (modInfo for modInfo in self.localModsInfo if modInfo.resourceId == rid)
+                ).taint
                 if remoteFileLive != localFileLive:
                     updateModRIDs.append(ModDownloadInfo(rid, remoteMod.getWindowsDownloadUrl()))
             self.finishCallback(updateModRIDs)
