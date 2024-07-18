@@ -1,10 +1,10 @@
 import os
 import sys
-import PySide6
+import webbrowser
+
 from PySide6.QtCore import QSize, QTimer
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
-import webbrowser
 from qfluentwidgets import (
     FluentWindow,
     FluentIcon,
@@ -12,34 +12,29 @@ from qfluentwidgets import (
     InfoBarPosition,
     Signal,
     SplashScreen,
-    Theme,
-    setTheme,
 )
-from features.common.ui import ChineseMessageBox
-from features.installation.view import DownloadManagerView
-from features.search.view import SearchView
-from features.server_mod.server_mod import ServerModInterface
-from features.settings.view import SettingsView
-from features.webview.webview_interface import PavlovToolboxWebsiteInterface
-from update_manager import UpdatesCheckThread
+
+from common.common_ui import ChineseMessageBox
+from interfaces.installation.view import ModInstallationManagerView
+from interfaces.local_mods_manager.view import LocalModsManagerView
+from interfaces.search.view import SearchView
+from interfaces.server_mod.server_mod import ServerModInterface
+from interfaces.settings.view import SettingsView
+from interfaces.webview.webview_interface import PavlovToolboxWebsiteInterface
 
 
 class AppMainWindow(FluentWindow):
-    # spell-checker: disable-next-line
-    # 用于在多个webview间同步主题，因为没有找到相关文档，为了避免bug，所以不用qconfig.themeChangedFinished 
-    # 发射对应WebViewInterface的uniqueName，防止自己发射自己接收，导致多运行一次
-    themeToggleSyncSignal = Signal(str)
     def __init__(self, debug=False):
         super().__init__()
         self.debug = debug
-        # 设置云母特效
-        # self.setMicaEffectEnabled(False)
+        # 禁用云母特效，否则和WebView搭配太丑了（WebView底色不透明）
+        self.setMicaEffectEnabled(False)
         self.resize(1000, 700)
         icon = QIcon(resourceAbsPath("icon.ico"))
         app.setWindowIcon(icon)
 
         self.initInterfaces()
-        self.startCheckUpdatesThread()
+
         self.navigationInterface.setExpandWidth(200)
         self.navigationInterface.setCollapsible(False)
 
@@ -54,13 +49,21 @@ class AppMainWindow(FluentWindow):
 
     def initInterfaces(self):
         self.homeInterface = PavlovToolboxWebsiteInterface(
-            "home", "https://pavlov-toolbox.rech.asia/app-home", self
+            "home",
+            "https://pavlov-toolbox.rech.asia/app-home",
+            self,
+            isRemoveToolButtons=True,
+            disableATagsJump=True,
         )
         self.searchInterface = SearchView()
         self.serverModInterface = ServerModInterface()
-        self.downloadManagerInterface = DownloadManagerView()
-        self.helpInterface = PavlovToolboxWebsiteInterface(
-            "help", "https://pavlov-toolbox.rech.asia/usage", self
+        self.downloadManagerInterface = ModInstallationManagerView()
+        self.localModsManagerInterface = LocalModsManagerView()
+        self.knowledgeBaseInterface = PavlovToolboxWebsiteInterface(
+            "knowledge_base", "https://pavlov-toolbox.rech.asia/knowledge-base", self
+        )
+        self.aboutInterface = PavlovToolboxWebsiteInterface(
+            "about", "https://pavlov-toolbox.rech.asia/about", self
         )
         self.settingsInterface = SettingsView()
 
@@ -74,22 +77,18 @@ class AppMainWindow(FluentWindow):
             self.downloadManagerInterface, FluentIcon.CLOUD_DOWNLOAD, "管理Mod安装任务"
         )
         self.addSubInterface(
-            PavlovToolboxWebsiteInterface(
-                "temp", "https://pavlov-toolbox.rech.asia/app-home", self
-            ),
+            self.localModsManagerInterface,
             FluentIcon.APPLICATION,
             "管理本地Mod",
-        )  # TODO: 把本地Mod更新也放在这里面。Mod更新时对比API返回的taint和本地的taint，一次可以查询多个mod，使用参数id-in=2996823,2804502
-        self.navigationInterface.addSeparator()
-        self.addSubInterface(
-            PavlovToolboxWebsiteInterface(
-                "temp2", "https://pavlov-toolbox.rech.asia/app-home", self
-            ),
-            FluentIcon.BOOK_SHELF,
-            "游戏相关知识",
         )
         self.navigationInterface.addSeparator()
-        self.addSubInterface(self.helpInterface, FluentIcon.QUESTION, "帮助")
+        self.addSubInterface(
+            self.knowledgeBaseInterface,
+            FluentIcon.BOOK_SHELF,
+            "游戏知识库",
+        )
+        self.navigationInterface.addSeparator()
+        self.addSubInterface(self.aboutInterface, FluentIcon.INFO, "关于")
         self.addSubInterface(self.settingsInterface, FluentIcon.SETTING, "设置")
 
     def onInterfaceChanged(self):
@@ -103,39 +102,13 @@ class AppMainWindow(FluentWindow):
             self.stackedWidget.currentWidget() is self.downloadManagerInterface
         )
 
-    def startCheckUpdatesThread(self):
-        def onHasNewVersion(latest_version):
-            msgBox = ChineseMessageBox(
-                "发现新版本", f"最新版本：{latest_version}", self
-            )
-            msgBox.yesSignal.connect(
-                lambda: webbrowser.open("https://pavlov-toolbox.rech.asia/download")
-            )
-            msgBox.yesButton.setText("前往下载")
-            msgBox.exec()
 
-        def onError(reason):
-            InfoBar.error(
-                title="检查更新失败",
-                content=reason,
-                position=InfoBarPosition.BOTTOM_RIGHT,
-                duration=5000,
-                parent=self,
-            )
-
-        self.updateCheckThread = UpdatesCheckThread()
-        self.updateCheckThread.onHasNewVersion.connect(onHasNewVersion)
-        self.updateCheckThread.onError.connect(onError)
-        self.updateCheckThread.finished.connect(
-            lambda: self.updateCheckThread.deleteLater()
-        )
-        self.updateCheckThread.start()
-
-
-def resourceAbsPath(relativePath):
+def resourceAbsPath(relativePath: str) -> str:
     """将相对路径转为exe运行时资源文件的绝对路径"""
+
     if hasattr(sys, "_MEIPASS"):
         # 只有通过exe运行时才会进入这个分支，它返回的是exe运行时的临时目录路径
+        # noinspection PyProtectedMember
         basePath = sys._MEIPASS  # type: ignore
     else:
         basePath = os.path.abspath(".")

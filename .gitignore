@@ -3,8 +3,6 @@ build
 output
 venv
 **/__pycache__
-.VSCodeCounter
 downloads
 assets/xmind
 .mypy_cache
-**/aria2.log
