@@ -7,10 +7,7 @@ import time
 from typing import Any, List, Optional
 import requests
 import app_config
-
-
-class Aria2RpcServerNotStartedException(Exception):
-    """Aria2没启动就尝试调用接口时抛出"""
+from common.path import getResourcePath
 
 
 class Aria2RpcException(Exception):
@@ -38,13 +35,10 @@ class Aria2:
         self.rpcId: int = 0
         # Aria2 中的每个下载任务都有一个唯一的 GID
         self.gidList: List[str] = []
-        self.process = None
 
-    def startRpcServer(self):
-        if self.process is not None:
-            return
-        executablePath = os.path.join("aria2", "aria2c.exe")
-        configPath = os.path.join("aria2", "aria2.conf")
+        executablePath = getResourcePath(os.path.join("aria2", "aria2c.exe"))
+        configPath = getResourcePath(os.path.join("aria2", "aria2.conf"))
+        print(executablePath, configPath)
         self.rpcSecret = secrets.token_hex(32)
         command = f"{executablePath} --conf-path {configPath} --rpc-secret {self.rpcSecret}"
         command = command.split()
@@ -53,12 +47,11 @@ class Aria2:
             command,
             stdout=sys.stdout if app_config.DEBUG else subprocess.DEVNULL,
             stderr=sys.stderr if app_config.DEBUG else subprocess.DEVNULL,
+            creationflags=subprocess.CREATE_NO_WINDOW,  # subprocess.DETACHED_PROCESS,
         )
 
     def _request(self, method: str, *params: Any):
-        """使用给定的params请求给定的method，可能会抛出`Aria2RpcException`和`requests.exceptions.ConnectionError`"""
-        if self.process is None:
-            raise Aria2RpcServerNotStartedException()
+        """使用给定的params请求给定的method，可能会抛出`requests.exceptions.ConnectionError`"""
         self.rpcId += 1
         payload = {
             "jsonrpc": "2.0",
@@ -68,9 +61,7 @@ class Aria2:
         }
         if params:
             payload["params"].extend(params)
-        response = requests.post(
-            self.rpcUrl, headers=self.rpcHeaders, data=json.dumps(payload)
-        )
+        response = requests.post(self.rpcUrl, headers=self.rpcHeaders, data=json.dumps(payload))
         obj: dict = response.json()
         if "error" in obj.keys():
             raise Aria2RpcException(obj["error"]["code"], obj["error"]["message"])
@@ -122,10 +113,13 @@ class Aria2:
     def shutdown(self):
         self._request("aria2.shutdown")
 
+    def forceShutdown(self):
+        self._request("aria2.forceShutdown")
+
 
 if __name__ == "__main__":
     aria2 = Aria2()
-    aria2.startRpcServer()
+    # aria2.startRpcServer()
     # time.sleep(1)
     gid = aria2.addUri(
         ["https://g-3959.modapi.io/v1/games/3959/mods/2804502/files/5245410/download"]

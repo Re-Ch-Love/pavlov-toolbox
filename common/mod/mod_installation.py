@@ -8,9 +8,9 @@ import zipfile
 import shutil
 
 from PySide6.QtNetwork import QNetworkReply
-from PySide6.QtWidgets import QApplication, QWidget
+from PySide6.QtWidgets import QApplication
 import app_config
-from typing import Dict, List, NamedTuple, Optional, Self
+from typing import Dict, List, NamedTuple, Optional
 
 from PySide6.QtCore import QRunnable, QThreadPool, QTimer
 from qfluentwidgets import QObject
@@ -29,9 +29,7 @@ def importMod(zipFilePath: str, modData: ModData):
 
     分为解压、补全、移动文件夹三个步骤"""
     # 定义该Mod解压补全时的临时目录路径
-    tempDir = os.path.join(
-        app_config.IMPORT_MOD_TEMP_DIR, f"UGC{modData.resourceId}"
-    )
+    tempDir = os.path.join(app_config.IMPORT_MOD_TEMP_DIR, f"UGC{modData.resourceId}")
     _unzipModData(tempDir, zipFilePath)
     _writeTaintFile(tempDir, str(modData.getModFileLive("windows")))
     _moveModTempDirToInstallationDir(tempDir)
@@ -88,7 +86,6 @@ class CardName(NamedTuple):
 
 
 aria2 = Aria2()
-aria2.startRpcServer()
 
 
 class ModImportWorkerSignals(QObject):
@@ -123,14 +120,22 @@ class ModInstallationJob:
     stage为error时，errorReason字段表示错误原因
     """
 
-    def __init__(self, gid: str, cardName: CardName, modData: ModData, mirrorStationNames: List[str] | None = None) -> None:
+    def __init__(
+        self,
+        gid: str,
+        cardName: CardName,
+        modData: ModData,
+        mirrorStationNames: List[str] | None = None,
+    ) -> None:
         """
         参数 `urls`：内容为相同资源的url列表（可以只传入一个）
         """
         self.gid: str = gid
         self.cardName: CardName = cardName
         self.modData: ModData = modData
-        self.mirrorStationNames: List[str] = mirrorStationNames if mirrorStationNames is not None else []
+        self.mirrorStationNames: List[str] = (
+            mirrorStationNames if mirrorStationNames is not None else []
+        )
         self.stage = ModInstallationStage.downloading
         self.downloadInfo = DownloadInfo()
         self.errorReason: str = ""
@@ -199,15 +204,11 @@ class MockModInstallationJob(ModInstallationJob):
 
         # 随机3s-10s后下载完成
         self.endDownloadingTime = (
-            time.time() + random.randint(3, 10)
-            if downloadTime is None
-            else downloadTime
+            time.time() + random.randint(3, 10) if downloadTime is None else downloadTime
         )
         # 下载完成后，随机1s-5s后导入完成
         self.endImportingTime = (
-            self.endDownloadingTime + random.randint(1, 5)
-            if importTime is None
-            else importTime
+            self.endDownloadingTime + random.randint(1, 5) if importTime is None else importTime
         )
         # 显示错误还是成功
         self.willOccurError = (
@@ -238,9 +239,10 @@ class MockModInstallationJob(ModInstallationJob):
 
 class ModInstallationManager(QObject):
     """Mod安装管理器
-    
+
     单例对象，使用ModInstallationManager.getInstance()获取
     """
+
     _instance: "ModInstallationManager | None" = None
 
     @classmethod
@@ -248,16 +250,20 @@ class ModInstallationManager(QObject):
         if cls._instance is None:
             cls._instance = ModInstallationManager()
         return cls._instance
-    
+
     def __init__(self) -> None:
         super().__init__()
         if ModInstallationManager._instance:
-            raise RuntimeError("ModInstallationManager is a singleton, please use ModInstallationManager.getInstance() instead")
+            raise RuntimeError(
+                "ModInstallationManager is a singleton, please use ModInstallationManager.getInstance() instead"
+            )
         ModInstallationManager._instance = self
         self._jobs: List[ModInstallationJob] = []
         self.dependencyProcessors: Dict[int, ModDependenciesProcessor] = {}
 
-    def addJob(self, modData: ModData, cardName: CardName | None = None, installedCheck: bool = True) -> None:
+    def addJob(
+        self, modData: ModData, cardName: CardName | None = None, installedCheck: bool = True
+    ) -> None:
         if cardName is None:
             cardName = CardName(modData.name, "")
         # 如果启用安装检查 且 已经安装了最新版
@@ -267,7 +273,7 @@ class ModInstallationManager(QObject):
         downloadUrls: List[str] = []
         # 镜像站名称，如果有镜像站，会在安装卡片中显示
         mirrorStationNames: List[str] = []
-       
+
         # 添加下载任务
         def addDownloadJob():
             # 把官方的下载地址放在最后，这样镜像站的优先级更高
@@ -279,23 +285,23 @@ class ModInstallationManager(QObject):
             self._jobs.append(job)
             # 检查依赖项
             self.addJobDependencies(modData)
-            
+
         # 尝试获取镜像站链接
         def afterGetMirrorUrl(mirrorUrl: str) -> None:
             if mirrorUrl:
                 downloadUrls.append(mirrorUrl)
                 mirrorStationNames.append("FrostBlade镜像站")
             addDownloadJob()
-            
+
         def whenGetMirrorUrlError(error: QNetworkReply.NetworkError):
             print(f"get FrostBlade mirror error: {error.name}")
             addDownloadJob()
 
         (
             getDownloadUrlFromFrostBladeMirror(self, modData.resourceId)
-                .then(afterGetMirrorUrl)
-                .catch(whenGetMirrorUrlError)
-                .done()
+            .then(afterGetMirrorUrl)
+            .catch(whenGetMirrorUrlError)
+            .done()
         )
 
     def addJobDependencies(self, modData: ModData):

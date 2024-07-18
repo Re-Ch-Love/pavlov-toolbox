@@ -1,7 +1,7 @@
 dist
 build
 output
-venv
+.venv
 **/__pycache__
 downloads
 assets/xmind

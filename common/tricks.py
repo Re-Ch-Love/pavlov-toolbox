@@ -1,7 +1,7 @@
 # 写项目时想到一些奇技淫巧，功能大多不完善，注意不要滥用
 
 from functools import wraps
-from typing import Callable, Any, Generic, Iterable, List, NoReturn, TypeVar
+from typing import Callable, TypeVar
 
 T = TypeVar("T")
 

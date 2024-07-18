@@ -4,6 +4,8 @@ from qfluentwidgets import MessageBox
 
 
 class ChineseMessageBox(MessageBox):
+    """按钮上为中文文本的消息框"""
+
     def __init__(self, title: str, content: str, parent):
         super().__init__(title, content, parent)
         self.yesButton.setText("确定")

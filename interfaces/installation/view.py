@@ -1,6 +1,5 @@
-import random
 from typing import List
-from PySide6.QtCore import QTimer, Qt
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QApplication,
     QSizePolicy,
@@ -8,19 +7,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from common.mod.mod_data import ModData
 from common.mod.mod_installation import (
-    CardName,
-    MockModInstallationJob,
     ModInstallationManager,
-    ModInstallationStage,
 )
 
 from qfluentwidgets import (
-    InfoBar,
     Signal,
     SingleDirectionScrollArea,
-    SubtitleLabel,
 )
 
 from interfaces.installation.card.view import ModInstallationCardView

@@ -1,12 +1,9 @@
-from enum import Enum
 from functools import partial
 from typing import List, Tuple
-from PySide6.QtCore import QSize
 from PySide6.QtWidgets import QApplication, QSizePolicy, QWidget
 from qfluentwidgets import InfoBar, InfoBarPosition, PrimaryPushButton
 
 from common.common_ui import UneditableQTableWidgetItem
-from common.mod.local_mods import getLocalMods
 from common.mod.mod_data import ModData
 from interfaces.local_mods_manager.presenter import LocalModsManagerPresenter
 from ui_design.local_mods_manager_interface_ui import Ui_LocalModsManagerInterface

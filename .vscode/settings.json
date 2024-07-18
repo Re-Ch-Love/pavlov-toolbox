@@ -25,7 +25,7 @@
         "**/CVS": true,
         "**/.DS_Store": true,
         "**/Thumbs.db": true,
-        "venv": true,
+        ".venv": true,
         "**/__pycache__": true,
         "build": true,
         "dist": true,
@@ -37,6 +37,7 @@
         "generated_ui"
     ],
     "cSpell.words": [
+        "creationflags",
         "Frameless",
         "MEIPASS",
         "modfile",

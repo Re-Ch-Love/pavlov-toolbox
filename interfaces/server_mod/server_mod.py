@@ -12,7 +12,6 @@ from common.common_ui import UneditableQTableWidgetItem
 from common.mod.local_mods import getLocalMods
 from common.mod.mod_data import MOD_BATCH_REQUEST_MAX_MODS_PER_REQUEST, ModData, modBatchRequest
 from common.mod.mod_installation import ModInstallationManager
-from common.qrequest import QRequestReady
 from ui_design.server_interface_ui import Ui_ServerModInterface
 
 SERVERS_MOD_LIST_URL = "https://api.pavlov-toolbox.rech.asia/servers-mod-list"

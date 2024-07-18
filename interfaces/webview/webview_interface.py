@@ -1,17 +1,11 @@
-from operator import truediv
-from PySide6.QtCore import QUrl, Qt
-from PySide6.QtWebEngineWidgets import QWebEngineView
+from PySide6.QtCore import QUrl
 from PySide6.QtWidgets import (
     QApplication,
-    QHBoxLayout,
     QSizePolicy,
-    QSpacerItem,
-    QStackedLayout,
-    QStyle,
     QVBoxLayout,
     QWidget,
 )
-from qfluentwidgets import FluentIcon, ToolButton
+from qfluentwidgets import FluentIcon
 from qframelesswindow.webengine import FramelessWebEngineView
 
 from ui_design.app_webview_toolbox_ui import Ui_AppWebviewToolbox
