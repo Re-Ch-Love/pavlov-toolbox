@@ -34,10 +34,10 @@ class Ui_ServerModInterface(object):
 
         self.horizontalLayout.addWidget(self.serverComboBox)
 
-        self.installButton = PrimaryPushButton(ServerModInterface)
-        self.installButton.setObjectName(u"installButton")
+        self.installAllButton = PrimaryPushButton(ServerModInterface)
+        self.installAllButton.setObjectName(u"installAllButton")
 
-        self.horizontalLayout.addWidget(self.installButton)
+        self.horizontalLayout.addWidget(self.installAllButton)
 
 
         self.verticalLayout_2.addLayout(self.horizontalLayout)
@@ -65,8 +65,8 @@ class Ui_ServerModInterface(object):
 
     def retranslateUi(self, ServerModInterface):
         ServerModInterface.setWindowTitle(QCoreApplication.translate("ServerModInterface", u"Form", None))
-        self.serverComboBox.setText(QCoreApplication.translate("ServerModInterface", u"PushButton", None))
-        self.installButton.setText(QCoreApplication.translate("ServerModInterface", u"\u4e00\u952e\u5b89\u88c5", None))
+        self.serverComboBox.setText(QCoreApplication.translate("ServerModInterface", u"Combo Box", None))
+        self.installAllButton.setText(QCoreApplication.translate("ServerModInterface", u"\u4e00\u952e\u5168\u90e8\u5b89\u88c5", None))
         ___qtablewidgetitem = self.tableWidget.horizontalHeaderItem(0)
         ___qtablewidgetitem.setText(QCoreApplication.translate("ServerModInterface", u"\u72b6\u6001", None));
         ___qtablewidgetitem1 = self.tableWidget.horizontalHeaderItem(1)

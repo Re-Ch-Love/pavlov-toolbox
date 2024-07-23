@@ -9,31 +9,42 @@ from qfluentwidgets import (
     InfoBar,
     InfoBarPosition,
     SplashScreen,
+    Theme,
+    setTheme,
 )
 
 from app_config import VERSION, Version
 from common.common_ui import ChineseMessageBox
+from common.mod.installation.mod_download_manager import ModDownloadManager
 from common.path import getResourcePath
 from common.qrequest import QRequestReady
-from interfaces.installation.view import ModInstallationManagerView
-from interfaces.local_mods_manager.view import LocalModsManagerView
-from interfaces.search.view import SearchView
-from interfaces.server_mod.server_mod import ServerModInterface
-from interfaces.settings.view import SettingsView
-from interfaces.webview.webview_interface import PavlovToolboxWebsiteInterface
+from common.log import AppLogger, initAppLogEnvironment
+from ui.interfaces.i_freezable import IFreezable
+from ui.interfaces.i_refreshable import IRefreshable
+from ui.installation.view import ModInstallationManagerView
+from ui.local_mods_manager.view import LocalModsManagerView
+from ui.search.view import SearchView
+from ui.server_mod.view import ServerModView
+from ui.settings.view import SettingsView
+from ui.webview.webview_interface import PavlovToolboxWebsiteInterface
 
 
 class AppMainWindow(FluentWindow):
     def __init__(self):
         super().__init__()
+        # 设置主题为亮色
+        setTheme(Theme.LIGHT)
         # 禁用云母特效，否则和WebView搭配太丑了（WebView底色不透明）
         self.setMicaEffectEnabled(False)
         self.resize(1000, 700)
+        # 设置icon
         icon = QIcon(getResourcePath("icon.ico"))
         app.setWindowIcon(icon)
 
+        # 默认展开边栏
         self.navigationInterface.setExpandWidth(200)
         self.navigationInterface.setCollapsible(False)
+
         self.stackedWidget.currentChanged.connect(self.onInterfaceChanged)
 
         self.initInterfaces()
@@ -51,21 +62,20 @@ class AppMainWindow(FluentWindow):
 
     def initInterfaces(self):
         self.homeInterface = PavlovToolboxWebsiteInterface(
-            "home",
             "https://pavlov-toolbox.rech.asia/app-home",
             self,
             isRemoveToolButtons=True,
             disableATagsJump=True,
         )
         self.searchInterface = SearchView()
-        self.serverModInterface = ServerModInterface()
+        self.serverModInterface = ServerModView()
         self.downloadManagerInterface = ModInstallationManagerView()
         self.localModsManagerInterface = LocalModsManagerView()
         self.knowledgeBaseInterface = PavlovToolboxWebsiteInterface(
-            "knowledge_base", "https://pavlov-toolbox.rech.asia/knowledge-base", self
+            "https://pavlov-toolbox.rech.asia/knowledge-base", self
         )
         self.aboutInterface = PavlovToolboxWebsiteInterface(
-            "about", "https://pavlov-toolbox.rech.asia/about", self
+            "https://pavlov-toolbox.rech.asia/about", self
         )
         self.settingsInterface = SettingsView()
 
@@ -96,17 +106,23 @@ class AppMainWindow(FluentWindow):
     def onInterfaceChanged(self):
         """
         当界面切换时触发
-
-        当切换到下载界面时，通知其轮询下载进度等信息。
-        当不是下载界面时，停止这些操作以节约资源。
         """
-        self.downloadManagerInterface.showStatusChanged.emit(
-            self.stackedWidget.currentWidget() is self.downloadManagerInterface
-        )
+        currentInterface = self.stackedWidget.currentWidget()
+        # 遍历所有的interface
+        for index in range(self.stackedWidget.count()):
+            interface = self.stackedWidget.widget(index)
+            # 如果该界面是当前界面，则调用其refresh方法刷新界面
+            if interface is currentInterface:
+                if isinstance(currentInterface, IRefreshable):
+                    currentInterface.refresh()
+            # 如果该界面不是当前界面，则调用其freeze方法冻结界面（例如停止轮询）
+            else:
+                if isinstance(interface, IFreezable):
+                    interface.freeze()
 
     def checkUpdates(self):
         # 判断是否需要更新
-        def judgeIsNeedUpdate(res: bytes) -> None | bool:
+        def decideIsNeedUpdate(res: bytes) -> None | bool:
             latestVersionStr = res.decode().strip('"')
             x, y, z = latestVersionStr.split(".", 3)
             if not (x.isdigit() and y.isdigit() and z.isdigit()):
@@ -141,15 +157,14 @@ class AppMainWindow(FluentWindow):
         (
             QRequestReady(app)
             .get("https://api.pavlov-toolbox.rech.asia/latest-version")
-            .then(judgeIsNeedUpdate)
+            .then(decideIsNeedUpdate)
             .then(updateIfNeed)
             .catch(onRequestError)
             .done()
         )
 
     def closeEvent(self, e):
-        from common.mod.mod_installation import aria2
-
+        aria2 = ModDownloadManager.getInstance().aria2c
         # 终止aria2进程
         aria2.process.terminate()
         # 等待aria2的进程结束（否则打包后清理临时资源时会出错（应该是因为aria2c.exe占用））
@@ -158,39 +173,12 @@ class AppMainWindow(FluentWindow):
         if aria2.process.poll() is None:
             aria2.process.kill()
         e.accept()
-
-        # 下面这段代码是用aria2.shutdown()来关闭，然后等待，但这样太慢了
-        # 似乎aria2.forceShutdown()也很慢
-
-        # isAccepted = False
-
-        # def acceptEvent():
-        #     nonlocal isAccepted
-        #     if isAccepted:
-        #         return
-        #     isAccepted = True
-        #     # 向aria2发送shutdown信号
-        #     # aria2.shutdown()
-        #     aria2.process.terminate()
-        #     # 然后等待它的进程结束（否则打包后清理临时资源时会出错）
-        #     aria2.process.wait(timeout=5)  # 设置5秒超时
-        #     e.accept()
-
-        # def ignoreEvent():
-        #     e.ignore()
-
-        # msgBox = ChineseMessageBox(
-        #     "确定要关闭 Pavlov 工具箱吗？",
-        #     "为确保下载引擎被正确关闭，点击“确定”后软件会短暂卡顿，请耐心等待！",
-        #     self,
-        # )
-        # msgBox.yesButton.clicked.connect(acceptEvent)
-        # msgBox.cancelButton.clicked.connect(ignoreEvent)
-        # msgBox.exec()
+        AppLogger().info(f"App关闭")
 
 
 if __name__ == "__main__":
-    # setTheme(Theme.LIGHT)
+    initAppLogEnvironment()
+    AppLogger().info(f"App启动")
     app = QApplication()
     window = AppMainWindow()
     window.show()

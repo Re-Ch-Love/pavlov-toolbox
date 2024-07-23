@@ -19,14 +19,14 @@
      <item>
       <widget class="ComboBox" name="serverComboBox">
        <property name="text">
-        <string>PushButton</string>
+        <string>Combo Box</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="PrimaryPushButton" name="installButton">
+      <widget class="PrimaryPushButton" name="installAllButton">
        <property name="text">
-        <string>一键安装</string>
+        <string>一键全部安装</string>
        </property>
       </widget>
      </item>

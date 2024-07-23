@@ -11,6 +11,9 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
+            "args": [
+                "--debug"
+            ]
             // "justMyCode": false,
         }
     ]

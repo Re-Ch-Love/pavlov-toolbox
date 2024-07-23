@@ -83,26 +83,12 @@
        </layout>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="progressBarHLayout">
-        <item>
-         <widget class="ProgressBar" name="progressBar">
-          <property name="maximum">
-           <number>1000</number>
-          </property>
-          <property name="value">
-           <number>88</number>
-          </property>
-          <property name="format">
-           <string/>
-          </property>
-         </widget>
-        </item>
-       </layout>
+       <layout class="QHBoxLayout" name="progressBarHLayout"/>
       </item>
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_3">
         <item>
-         <widget class="CaptionLabel" name="mirrorStationsLabel">
+         <widget class="CaptionLabel" name="promptLabel">
           <property name="text">
            <string>通过xxxxx加速中</string>
           </property>
@@ -122,7 +108,7 @@
          </spacer>
         </item>
         <item>
-         <widget class="CaptionLabel" name="progressLabel">
+         <widget class="CaptionLabel" name="progressInfoLabel">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Maximum">
             <horstretch>0</horstretch>
@@ -130,23 +116,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>- B / - B</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="CaptionLabel" name="speedLabel">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Maximum">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>- B/s</string>
+           <string>- B / - B  - B /s</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -164,11 +134,6 @@
   <customwidget>
    <class>TransparentToolButton</class>
    <extends>QToolButton</extends>
-   <header>qfluentwidgets</header>
-  </customwidget>
-  <customwidget>
-   <class>ProgressBar</class>
-   <extends>QProgressBar</extends>
    <header>qfluentwidgets</header>
   </customwidget>
   <customwidget>

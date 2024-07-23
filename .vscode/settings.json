@@ -39,14 +39,17 @@
     "cSpell.words": [
         "creationflags",
         "Frameless",
+        "levelname",
         "MEIPASS",
         "modfile",
+        "pavlovtoolbox",
         "pyside",
         "qconfig",
         "qfluentwidgets",
         "qframelesswindow",
         "qreq",
         "qrequest",
+        "Refreshable",
         "webengine"
-    ]
+    ],
 }

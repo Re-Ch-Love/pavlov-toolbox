@@ -22,10 +22,23 @@ class ModDataNotFound(Exception):
 # Taint文件内容是mod.getModFileLive("windows")
 class ModData:
     def __init__(self, data: dict) -> None:
-        self.data = data
+        self._data = data
 
     @staticmethod
-    def constructFromServer(resourceID: int):
+    def constructFromApi(resourceID: int) -> "ModData":
+        """从Api中获取数据以构造ModData对象
+
+        使用requests库获取数据，因此不能在主线程中执行。一般用于开发中的测试。
+
+        Args:
+            resourceID (int): Mod资源ID
+
+        Raises:
+            ModDataNotFound: 当Mod数据对象不存在时抛出
+
+        Returns:
+            ModData: 略
+        """
         res = requests.get(
             f"https://api.pavlov-toolbox.rech.asia/modio/v1/games/@pavlov/mods?_limit=1&id={resourceID}"
         )
@@ -33,43 +46,43 @@ class ModData:
         jsonObj = res.json()
         data = jsonObj["data"]
         if len(data) == 0:
-            raise ModDataNotFound("mod数据对象", modId=resourceID)
+            raise ModDataNotFound("Mod数据对象", modId=resourceID)
         return ModData(data[0])
 
     def getModFileLive(self, platformName: str) -> int:
-        platform_list: List[Dict] = self.data["platforms"]
+        platform_list: List[Dict] = self._data["platforms"]
         for platform in platform_list:
             if platform["platform"] == platformName:
                 return int(platform["modfile_live"])
-        raise ModDataNotFound(
-            f"目标平台", platformName=platformName, mod_raw_data=self.data
-        )
+        raise ModDataNotFound(f"目标平台", platformName=platformName, mod_raw_data=self._data)
 
     def getWindowsDownloadUrl(self) -> str:
-        rid = self.data["id"]
+        rid = self._data["id"]
         modFileLive = self.getModFileLive("windows")
         return f"https://g-3959.modapi.io/v1/games/3959/mods/{rid}/files/{modFileLive}/download"
 
     @property
+    def taint(self) -> int:
+        return self.getModFileLive("windows")
+
+    @property
     def name(self) -> str:
         """Mod名称（只读）"""
-        return self.data["name"]
+        return self._data["name"]
 
     @property
     def resourceId(self) -> int:
         """Mod资源ID（只读）"""
-        return self.data["id"]
+        return self._data["id"]
 
     def __str__(self) -> str:
-        return str(self.data)
+        return f"ModData(name={self.name}, resourceId={self.resourceId})"
 
     def __repr__(self) -> str:
-        return str(self.data)
+        return f"ModData(name={self.name}, resourceId={self.resourceId})"
 
 
-MOD_BATCH_REQUEST_URL = (
-    "https://api.pavlov-toolbox.rech.asia/modio/v1/games/@pavlov/mods?id-in=%s"
-)
+MOD_BATCH_REQUEST_URL = "https://api.pavlov-toolbox.rech.asia/modio/v1/games/@pavlov/mods?id-in=%s"
 # 批量请求时，每一次请求的最大Mod数量
 MOD_BATCH_REQUEST_MAX_MODS_PER_REQUEST = 50
 
@@ -118,9 +131,7 @@ def modBatchRequest(
     for replyIndex, startIndex in enumerate(
         range(0, len(modRidList), MOD_BATCH_REQUEST_MAX_MODS_PER_REQUEST)
     ):
-        currentGroup = modRidList[
-            startIndex : startIndex + MOD_BATCH_REQUEST_MAX_MODS_PER_REQUEST
-        ]
+        currentGroup = modRidList[startIndex : startIndex + MOD_BATCH_REQUEST_MAX_MODS_PER_REQUEST]
         # 把rid用逗号连接
         ids = ",".join([str(rid) for rid in currentGroup])
         request = QtNetwork.QNetworkRequest(QUrl(MOD_BATCH_REQUEST_URL % ids))
@@ -133,80 +144,151 @@ def modBatchRequest(
 
 def modBatchQRequest(parent: QObject, ridList: List[int]):
     """使用QRequest批量处理MOD数据请求"""
-    # 将rid用逗号连接
-    ridParam = ",".join([str(rid) for rid in ridList])
-    # 获取请求url
-    url = MOD_BATCH_REQUEST_URL % ridParam
+    # 将请求分组，90个一组（太多了不能一次性请求，根据测试请求的上限应该是100个，保险起见90个一组）
+    groups: List[str] = []
+    for startIndex in range(0, len(ridList), 90):
+        # 将rid用逗号连接
+        ridParam = ",".join([str(rid) for rid in ridList[startIndex : startIndex + 100]])
+        # 拼接目标url
+        url = MOD_BATCH_REQUEST_URL % ridParam
+        groups.append(url)
 
-    def splitModData(context: bytes):
-        return [ModData(data) for data in json.loads(context)["data"]]
+    def convertToModData(context: bytes, otherModDataList: List[ModData] | None = None):
+        resultModList: List[ModData] = [ModData(data) for data in json.loads(context)["data"]]
+        if otherModDataList:
+            resultModList.extend(otherModDataList)
+        if len(groups) != 0:
+            return (
+                QRequestReady(parent)
+                .get(groups.pop())
+                .then(partial(convertToModData, otherModDataList=resultModList))
+            )
+        return resultModList
 
-    return QRequestReady(parent).get(url).then(splitModData)
+    return QRequestReady(parent).get(groups.pop()).then(convertToModData)
 
 
-if __name__ == "__main__":
+def test1():
     ridList = [
-        3462586,
-        3467755,
-        3269978,
-        3270138,
-        3798700,
-        3484154,
-        3953175,
-        3943563,
-        3969882,
-        3268798,
-        3391531,
-        3391413,
-        4009773,
-        3977264,
-        3020535,
-        2996823,
-        3051820,
-        3223861,
-        3116594,
-        2867687,
-        2856317,
-        3173315,
-        3265534,
-        3231288,
-        3624316,
-        3188315,
-        3002208,
-        3048982,
-        3061028,
-        3054923,
-        4115864,
-        4118866,
-        4075563,
-        2802847,
-        2813799,
         2771448,
-        2803451,
-        3084806,
-        3116397,
-        2811370,
-        2810499,
-        3252855,
-        3090639,
+        2773654,
+        2773760,
+        2788214,
+        2788277,
         2790869,
+        2802847,
+        2804210,
+        2804502,
+        2809826,
+        2810499,
+        2811148,
+        2811370,
+        2812319,
+        2813799,
+        2817844,
+        2829349,
+        2840314,
+        2840384,
+        2844898,
+        2849391,
+        2856317,
+        2867687,
+        2871454,
+        2879562,
+        2996823,
+        3002208,
+        3002600,
+        3018770,
+        3020535,
+        3037601,
+        3048982,
+        3051820,
+        3054096,
+        3054923,
+        3061028,
+        3084806,
+        3084882,
+        3085188,
+        3090639,
+        3094680,
+        3094925,
         3104159,
         3106258,
-        3113360,
-        3037601,
-        2773760,
         3113040,
-        2970978,
-        3252313,
-        2849391,
-        4045141,
+        3113360,
+        3116397,
+        3116594,
+        3122797,
+        3126365,
+        3131146,
+        3132480,
+        3133545,
+        3173315,
+        3173489,
+        3188315,
+        3189342,
+        3193506,
+        3223142,
+        3223861,
+        3231288,
+        3231764,
+        3237514,
+        3243988,
+        3265534,
+        3268798,
+        3269828,
+        3269978,
+        3270138,
+        3270182,
+        3302201,
+        3370978,
+        3391413,
+        3391531,
+        3395364,
+        3462586,
+        3463467,
+        3467755,
+        3484154,
+        3534001,
+        3541450,
+        3556047,
+        3564015,
+        3664797,
+        3698400,
+        3748215,
+        3754271,
+        3785974,
+        3798700,
+        3901501,
+        3924157,
+        3927308,
+        3936882,
+        3943563,
+        3943838,
+        3945378,
+        3951597,
+        3953175,
+        3965340,
+        3969882,
+        3975268,
+        3977264,
+        4006655,
+        4009773,
+        4075563,
+        4113442,
+        4128088,
+        4136968,
     ]
     print(len(set(ridList)))
+    # ridList = [mod.resourceId for mod in getLocalMods()]
     app = QApplication()
     (
-        modBatchQRequest(app, ridList)
-        .then(lambda mods: print(len(mods)))
+        modBatchQRequest(app, ridList).then(lambda mods: print(len(mods)))
         # .then(lambda mods: print([mod.name for mod in mods]))
         .done()
     )
     app.exec()
+
+
+if __name__ == "__main__":
+    test1()

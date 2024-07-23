@@ -15,11 +15,38 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="PushButton" name="openLogDirButton">
+       <property name="text">
+        <string>打开日志文件夹</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="PushButton" name="cleanDownloadTmpButton">
+      <widget class="PushButton" name="cleanTmpButton">
        <property name="text">
-        <string>清理下载文件缓存</string>
+        <string>清理软件缓存</string>
        </property>
       </widget>
      </item>

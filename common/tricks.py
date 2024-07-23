@@ -3,11 +3,14 @@
 from functools import wraps
 from typing import Callable, TypeVar
 
+
 T = TypeVar("T")
 
+
 def once(func: Callable[..., T]):
-    """
-    使用该装饰器后，可以保证该函数只会执行一次，后续将会返回None（且不会抛出异常）"""
+    """保证函数只会执行一次的装饰器，后续将会返回None（且不会抛出异常）
+
+    仅用于函数（不可用于类的方法）"""
     hasCalled = False
 
     @wraps(func)
@@ -23,9 +26,9 @@ def once(func: Callable[..., T]):
 
 
 def onceMethod(func: Callable[..., T]):
-    """
-    使用该装饰器后，可以保证该函数只会执行一次，后续将会返回None（且不会抛出异常）
-    """
+    """保证函数只会执行一次的装饰器，后续将会返回None（且不会抛出异常）
+
+    仅用于类的方法（不可用于函数）"""
 
     @wraps(func)
     def wrapper(*args, **kwargs) -> T | None:
@@ -44,7 +47,7 @@ def onceMethod(func: Callable[..., T]):
 
 
 def cached(func: Callable[..., T]):
-    """使用该装饰器后，可以该函数只会执行一次，后续将会返回缓存的值"""
+    """使用该装饰器后，该函数只会执行一次，后续将会返回缓存的值"""
     hasCalled = False
     cache: T
 
@@ -58,7 +61,9 @@ def cached(func: Callable[..., T]):
 
     return wrapper
 
+
 def interfaceMethod(func: Callable[..., T]):
     def wrapper(*args, **kwargs) -> T:
         raise NotImplementedError("interface method should be implemented")
+
     return wrapper

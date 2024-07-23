@@ -18,7 +18,7 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
 from PySide6.QtWidgets import (QApplication, QHBoxLayout, QLabel, QSizePolicy,
     QSpacerItem, QVBoxLayout, QWidget)
 
-from qfluentwidgets import (CaptionLabel, CardWidget, ProgressBar, TransparentToolButton)
+from qfluentwidgets import (CaptionLabel, CardWidget, TransparentToolButton)
 
 class Ui_InstallationCard(object):
     def setupUi(self, InstallationCard):
@@ -67,45 +67,30 @@ class Ui_InstallationCard(object):
 
         self.progressBarHLayout = QHBoxLayout()
         self.progressBarHLayout.setObjectName(u"progressBarHLayout")
-        self.progressBar = ProgressBar(self.frame)
-        self.progressBar.setObjectName(u"progressBar")
-        self.progressBar.setMaximum(1000)
-        self.progressBar.setValue(88)
-
-        self.progressBarHLayout.addWidget(self.progressBar)
-
 
         self.verticalLayout.addLayout(self.progressBarHLayout)
 
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
-        self.mirrorStationsLabel = CaptionLabel(self.frame)
-        self.mirrorStationsLabel.setObjectName(u"mirrorStationsLabel")
+        self.promptLabel = CaptionLabel(self.frame)
+        self.promptLabel.setObjectName(u"promptLabel")
 
-        self.horizontalLayout_3.addWidget(self.mirrorStationsLabel)
+        self.horizontalLayout_3.addWidget(self.promptLabel)
 
         self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout_3.addItem(self.horizontalSpacer)
 
-        self.progressLabel = CaptionLabel(self.frame)
-        self.progressLabel.setObjectName(u"progressLabel")
+        self.progressInfoLabel = CaptionLabel(self.frame)
+        self.progressInfoLabel.setObjectName(u"progressInfoLabel")
         sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Maximum)
         sizePolicy2.setHorizontalStretch(0)
         sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.progressLabel.sizePolicy().hasHeightForWidth())
-        self.progressLabel.setSizePolicy(sizePolicy2)
-        self.progressLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        sizePolicy2.setHeightForWidth(self.progressInfoLabel.sizePolicy().hasHeightForWidth())
+        self.progressInfoLabel.setSizePolicy(sizePolicy2)
+        self.progressInfoLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.horizontalLayout_3.addWidget(self.progressLabel)
-
-        self.speedLabel = CaptionLabel(self.frame)
-        self.speedLabel.setObjectName(u"speedLabel")
-        sizePolicy2.setHeightForWidth(self.speedLabel.sizePolicy().hasHeightForWidth())
-        self.speedLabel.setSizePolicy(sizePolicy2)
-        self.speedLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        self.horizontalLayout_3.addWidget(self.speedLabel)
+        self.horizontalLayout_3.addWidget(self.progressInfoLabel)
 
 
         self.verticalLayout.addLayout(self.horizontalLayout_3)
@@ -123,9 +108,7 @@ class Ui_InstallationCard(object):
         InstallationCard.setWindowTitle(QCoreApplication.translate("InstallationCard", u"Form", None))
         self.nameLabel.setText(QCoreApplication.translate("InstallationCard", u"<html><head/><body><p><span style=\" font-size:16pt;\">\u6587\u4ef6\u540d</span><span style=\" font-size:10pt; color:#737373;\">\uff08\u63d0\u793a\u6587\u4ef6\u540d\uff09</span></p></body></html>", None))
         self.closeButton.setText("")
-        self.progressBar.setFormat("")
-        self.mirrorStationsLabel.setText(QCoreApplication.translate("InstallationCard", u"\u901a\u8fc7xxxxx\u52a0\u901f\u4e2d", None))
-        self.progressLabel.setText(QCoreApplication.translate("InstallationCard", u"- B / - B", None))
-        self.speedLabel.setText(QCoreApplication.translate("InstallationCard", u"- B/s", None))
+        self.promptLabel.setText(QCoreApplication.translate("InstallationCard", u"\u901a\u8fc7xxxxx\u52a0\u901f\u4e2d", None))
+        self.progressInfoLabel.setText(QCoreApplication.translate("InstallationCard", u"- B / - B  - B /s", None))
     # retranslateUi
 

@@ -6,6 +6,7 @@ from PySide6.QtCore import QObject
 from PySide6.QtNetwork import QNetworkAccessManager
 from PySide6.QtWidgets import QApplication
 
+from common.log import logThis
 from common.tricks import interfaceMethod
 
 
@@ -42,6 +43,10 @@ class QPromise:
     def __init__(self):
         self.thenFuncList: List[Callable[..., Any]] = []
         self.catchFunc: Callable[..., Any] | None = None
+        # 如果定义了final，需要考虑：
+        # 当thenFunc的链式调用中返回了QPromise时，如果该QPromise已经有了finalFunc，那么外层的finalFunc就需要放到这个finalFunc之后去执行
+        # 实现起来比较复杂，而且暂时不需要，因此搁置
+        # self.finalFunc: Callable[..., Any] | None = None
 
     def then(self, func: Callable[..., Any]) -> Self:
         self.thenFuncList.append(func)
@@ -50,6 +55,10 @@ class QPromise:
     def catch(self, func: Callable[..., Any]) -> Self:
         self.catchFunc = func
         return self
+
+    # def final(self, func: Callable[..., Any]) -> Self:
+    #     self.finalFunc = func
+    #     return self
 
     @interfaceMethod
     def done(self) -> Self: ...
@@ -129,18 +138,14 @@ class QDataPromise(QPromise):
     def __init__(self, data: Any):
         self.data = data
         self.thenFuncList: List[Callable[..., Any]] = []
-        self.catchFunc: Callable[[QtNetwork.QNetworkReply.NetworkError], Any] | None = (
-            None
-        )
+        self.catchFunc: Callable[[QtNetwork.QNetworkReply.NetworkError], Any] | None = None
         self.lastFuncResult = None
 
     def then(self, func: Callable[..., Any]) -> Self:
         self.thenFuncList.append(func)
         return self
 
-    def catch(
-        self, func: Callable[[QtNetwork.QNetworkReply.NetworkError], Any]
-    ) -> Self:
+    def catch(self, func: Callable[[QtNetwork.QNetworkReply.NetworkError], Any]) -> Self:
         self.catchFunc = func
         return self
 
@@ -216,15 +221,9 @@ def test2():
     app = QApplication()
 
     def getResult():
-        return (
-            QRequestReady(app)
-            .get("https://www.example.com")
-            .then(lambda content: "some value")
-        )
+        return QRequestReady(app).get("https://www.example.com").then(lambda content: "some value")
 
-    getResult().then(lambda value: print(value)).catch(
-        lambda error: print(error)
-    ).done()
+    getResult().then(lambda value: print(value)).catch(lambda error: print(error)).done()
     app.exec()
 
 
